@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account | PoisonSense AI</title>
+
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body class="auth-body">
+
+  <div class="auth-container">
+
+    <!-- Logo -->
+    <div class="auth-header">
+      <img src="../images/logo.jpg" alt="PoisonSense AI">
+      <h2>PoisonSense AI</h2>
+      <h3>Create Your Account</h3>
+      <p>Join us to access life-saving emergency support</p>
+    </div>
+
+    <!-- Signup Form -->
+    <form class="auth-form">
+
+      <label>Full Name *</label>
+      <div class="input-box">
+        <input type="text" placeholder="Your full name" required>
+      </div>
+
+      <div class="input-row">
+        <div>
+          <label>Email Address *</label>
+          <div class="input-box">
+            <input type="email" placeholder="your.email@example.com" required>
+          </div>
+        </div>
+
+        <div>
+          <label>Phone Number *</label>
+          <div class="input-box">
+            <input type="tel" placeholder="98XXXXXXXX" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div>
+          <label>Password *</label>
+          <div class="input-box">
+            <input type="password" placeholder="Create password" required>
+          </div>
+        </div>
+
+        <div>
+          <label>Confirm Password *</label>
+          <div class="input-box">
+            <input type="password" placeholder="Confirm password" required>
+          </div>
+        </div>
+      </div>
+
+      <label>Blood Type (Optional)</label>
+      <div class="input-box">
+        <select>
+          <option value="">Select blood type</option>
+          <option>A+</option>
+          <option>A-</option>
+          <option>B+</option>
+          <option>B-</option>
+          <option>AB+</option>
+          <option>AB-</option>
+          <option>O+</option>
+          <option>O-</option>
+        </select>
+      </div>
+
+      <div class="checkbox">
+        <input type="checkbox" required>
+        <span>
+          I agree to the <a href="#">Terms of Service</a> and
+          <a href="#">Privacy Policy</a>
+        </span>
+      </div>
+
+      <button type="submit" class="btn-primary">👤 Create Account</button>
+
+      <div class="divider">Or sign up with</div>
+
+      <div class="social-buttons">
+        <button type="button" class="btn-social google">G Google</button>
+        <button type="button" class="btn-social facebook">f  Facebook</button>
+      </div>
+
+    </form>
+
+    <!-- Emergency Box -->
+    <div class="emergency-box">
+      <h4>⚠ Emergency Situation?</h4>
+      <p>You can access emergency features without creating an account.</p>
+      <a href="#" class="btn-emergency">Get Emergency Help Now</a>
+    </div>
+
+  </div>
+
+</body>
+</html>
