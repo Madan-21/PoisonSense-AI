@@ -2,7 +2,7 @@ import React from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-export default function Login() {
+export default function Signup() {
   return (
     <>
       <Navbar />
@@ -16,8 +16,8 @@ export default function Login() {
         }}
       >
         <div style={{ textAlign: "center" }}>
-          <h1>🔐 Login</h1>
-          <p>Login page coming soon...</p>
+          <h1>📝 Sign Up</h1>
+          <p>Sign up page coming soon...</p>
         </div>
       </section>
       <Footer />
