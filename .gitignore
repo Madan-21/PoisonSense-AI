@@ -7,3 +7,9 @@ __pycache__/
 .DS_Store
 dist/
 build/
+
+# Virtual environments
+venv/
+.venv/
+backend/venv/
+env/
