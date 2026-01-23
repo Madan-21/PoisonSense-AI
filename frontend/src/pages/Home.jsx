@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PoisonMap from "../components/PoisonMap";
@@ -36,12 +37,12 @@ export default function Home() {
             </p>
 
             <div className="hero-buttons">
-              <a className="btn btn-red" href="/find-help">
+              <Link className="btn btn-red" to="/find-help">
                 ➕ Get Emergency Help Now
-              </a>
-              <a className="btn btn-white" href="/ai-assistant">
+              </Link>
+              <Link className="btn btn-white" to="/ai-assistant">
                 ✨ Start AI Assessment
-              </a>
+              </Link>
             </div>
           </div>
 
@@ -136,9 +137,9 @@ export default function Home() {
             <p>
               Natural language conversation to assess your emergency situation
             </p>
-            <a href="#" className="learn-more">
+            <Link to="/ai-assistant" className="learn-more">
               Learn more →
-            </a>
+            </Link>
           </div>
 
           <div className="feature-card">
@@ -147,9 +148,9 @@ export default function Home() {
             </div>
             <h3>Risk Assessment</h3>
             <p>Evaluate symptoms and analyze immediate risk level</p>
-            <a href="#" className="learn-more">
+            <Link to="/risk-assessment" className="learn-more">
               Learn more →
-            </a>
+            </Link>
           </div>
 
           <div className="feature-card">
@@ -158,9 +159,9 @@ export default function Home() {
             </div>
             <h3>Emergency Guidance</h3>
             <p>Step-by-step instructions for handling poisoning emergencies</p>
-            <a href="#" className="learn-more">
+            <Link to="/ai-assistant" className="learn-more">
               Learn more →
-            </a>
+            </Link>
           </div>
 
           <div className="feature-card">
@@ -169,9 +170,9 @@ export default function Home() {
             </div>
             <h3>Find Nearby Help</h3>
             <p>Locate emergency rooms and poison control centers near you</p>
-            <a href="#" className="learn-more">
+            <Link to="/find-help" className="learn-more">
               Learn more →
-            </a>
+            </Link>
           </div>
 
           <div className="feature-card">
@@ -180,9 +181,9 @@ export default function Home() {
             </div>
             <h3>Poison Identification</h3>
             <p>Identify substances and understand their medical effects</p>
-            <a href="#" className="learn-more">
+            <Link to="/analyze-poison" className="learn-more">
               Learn more →
-            </a>
+            </Link>
           </div>
 
           <div className="feature-card">
@@ -191,9 +192,9 @@ export default function Home() {
             </div>
             <h3>Personal Profile</h3>
             <p>Store medical info and emergency contacts for quick access</p>
-            <a href="#" className="learn-more">
+            <Link to="/profile" className="learn-more">
               Learn more →
-            </a>
+            </Link>
           </div>
         </div>
       </section>
@@ -282,11 +283,11 @@ export default function Home() {
             immediately if you're in a critical situation
           </p>
           <div className="cta-buttons">
-            <a href="/ai-assistant" className="cta-btn cta-btn-red">
+            <Link to="/ai-assistant" className="cta-btn cta-btn-red">
               🏥 Start Emergency Assessment
-            </a>
-            <a href="tel:101" className="cta-btn cta-btn-white">
-              📞 Call 101 Now
+            </Link>
+            <a href="tel:102" className="cta-btn cta-btn-white">
+              📞 Call 102 Now
             </a>
           </div>
         </div>
