@@ -1610,8 +1610,8 @@ body {
     width: 100%;
   }
 }
+/* Login signup */
 /* ===== PoisonSense Auth Pages ===== */
-
 .auth-body {
   min-height: 100vh;
   display: flex;
