@@ -1,0 +1,448 @@
+/* Risk Assessment Page Styles */
+
+.risk-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Main Content */
+.risk-content {
+  background-color: white;
+  padding: 40px 24px 0 24px;
+}
+
+.content-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  font-size: 36px;
+  font-weight: 700;
+  color: #1F2937;
+  margin: 0 0 8px 0;
+}
+
+.page-header p {
+  font-size: 16px;
+  color: #6B7280;
+  margin: 0;
+}
+
+/* Disclaimer Box */
+.risk-card-container {
+  background-color: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.risk-card-container .disclaimer-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background-color: #FEF3C7;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  border: 1px solid #FDE68A;
+}
+
+.risk-card-container .disclaimer-box .disclaimer-icon svg {
+  color: #D97706;
+}
+
+.risk-card-container .disclaimer-box p {
+  font-size: 14px;
+  color: #92400E;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Risk Display */
+.risk-display {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 28px;
+  border-radius: 12px;
+  margin-bottom: 0;
+}
+
+.risk-display.risk-low {
+  background-color: #22C55E;
+}
+
+.risk-display.risk-moderate {
+  background-color: #EAB308;
+}
+
+.risk-display.risk-high {
+  background-color: #F97316;
+}
+
+.risk-display.risk-critical {
+  background-color: #DC2626;
+}
+
+.risk-icon {
+  width: 52px;
+  height: 52px;
+  background-color: rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.risk-info h2 {
+  font-size: 26px;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 4px 0;
+}
+
+.risk-info p {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+}
+
+/* Assessment Card Section - White Background */
+.assessment-card-wrapper {
+  background-color: #F3F4F6;
+  padding: 40px 24px;
+  margin: 0 -24px;
+}
+
+.assessment-card-wrapper .assessment-card {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Assessment Section */
+.assessment-section {
+  background-color: white;
+  padding: 40px 24px;
+}
+
+.assessment-section-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Assessment Card */
+.assessment-card {
+  background-color: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Time Section */
+.time-section {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.time-section h3,
+.symptoms-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0 0 16px 0;
+}
+
+.time-options {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.time-btn {
+  padding: 12px 24px;
+  background-color: white;
+  border: 2px solid #E5E7EB;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4B5563;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.time-btn:hover {
+  border-color: #2563EB;
+  color: #2563EB;
+}
+
+.time-btn.active {
+  background-color: #2563EB;
+  border-color: #2563EB;
+  color: white;
+}
+
+/* Symptoms Section */
+.symptoms-section {
+  margin-bottom: 32px;
+}
+
+.symptoms-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.symptom-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.symptom-item:hover {
+  background-color: #F9FAFB;
+}
+
+.symptom-item input[type="checkbox"] {
+  display: none;
+}
+
+.checkbox-custom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #D1D5DB;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.symptom-item input[type="checkbox"]:checked + .checkbox-custom {
+  background-color: #3B82F6;
+  border-color: #3B82F6;
+}
+
+.symptom-item input[type="checkbox"]:checked + .checkbox-custom::after {
+  content: '✓';
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.symptom-label {
+  flex: 1;
+  font-size: 15px;
+  color: #374151;
+}
+
+.severity-badge {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.severity-badge.severity-critical {
+  background-color: #DC2626;
+  color: white;
+}
+
+.severity-badge.severity-high {
+  background-color: #F97316;
+  color: white;
+}
+
+.severity-badge.severity-moderate {
+  background-color: #EAB308;
+  color: white;
+}
+
+.severity-badge.severity-low {
+  background-color: #22C55E;
+  color: white;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 16px;
+}
+
+.btn-guidance,
+.btn-find-help {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 24px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-guidance {
+  background-color: #22C55E;
+  color: white;
+}
+
+.btn-guidance:hover {
+  background-color: #16A34A;
+}
+
+.btn-find-help {
+  background-color: #DC2626;
+  color: white;
+}
+
+.btn-find-help:hover {
+  background-color: #B91C1C;
+}
+
+/* CTA Section */
+.cta-section {
+  background-color: #2563EB;
+  padding: 60px 24px 40px;
+  text-align: center;
+  margin: 0;
+}
+
+.cta-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.cta-section h2 {
+  font-size: 32px;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 12px 0;
+}
+
+.cta-section p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 32px 0;
+  line-height: 1.6;
+}
+
+.cta-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-emergency {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 32px;
+  background-color: #DC2626;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-emergency:hover {
+  background-color: #B91C1C;
+  transform: translateY(-2px);
+}
+
+.btn-call {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 32px;
+  background-color: white;
+  color: #22C55E;
+  border: 2px solid white;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-call:hover {
+  background-color: #F0FDF4;
+  color: #16A34A;
+}
+
+/* Responsive - Tablet */
+@media (max-width: 1024px) {
+  .risk-content {
+    padding: 24px 16px;
+  }
+}
+
+/* Responsive - Mobile */
+@media (max-width: 768px) {
+  .risk-content {
+    padding: 24px 16px;
+  }
+  
+  .page-header h1 {
+    font-size: 26px;
+  }
+  
+  .assessment-card {
+    padding: 24px 20px;
+  }
+  
+  .time-options {
+    flex-direction: column;
+  }
+  
+  .time-btn {
+    width: 100%;
+    text-align: center;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .cta-section {
+    padding: 40px 16px;
+  }
+  
+  .cta-section h2 {
+    font-size: 26px;
+  }
+  
+  .cta-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .btn-emergency,
+  .btn-call {
+    justify-content: center;
+  }
+}

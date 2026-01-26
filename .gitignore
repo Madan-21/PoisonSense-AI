@@ -64,3 +64,18 @@ npm-debug.log
 # Environment variables
 .env.local
 .env.production
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.env
+*.pkl
+.DS_Store
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+backend/venv/
+env/
