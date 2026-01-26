@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { logoutRequest } from "../api/auth";
 
 // SVG Icons matching Figma design
 const HomeIcon = () => (
@@ -53,8 +54,22 @@ const PillIcon = () => (
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isActive = (path) => location.pathname === path;
+
+  // ✅ CHECK LOGIN STATUS
+  const isLoggedIn = !!localStorage.getItem("access_token");
+
+  // ✅ LOGOUT HANDLER
+  const handleLogout = async () => {
+    try {
+      await logoutRequest();
+    } finally {
+      setIsOpen(false);
+      navigate("/login");
+    }
+  };
 
   return (
     <nav className="navbar-new">
@@ -67,84 +82,80 @@ export default function Navbar() {
           />
           <span>PoisonSense AI</span>
         </Link>
-        
+
         <div className="menu-icon-new" onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? "✕" : "☰"}
         </div>
-        
+
         <ul className={isOpen ? "nav-menu-new active" : "nav-menu-new"}>
           <li className="nav-item-new">
-            <Link to="/" className={`nav-link-new ${isActive('/') ? 'active' : ''}`} onClick={() => setIsOpen(false)}>
+            <Link to="/" className={`nav-link-new ${isActive("/") ? "active" : ""}`} onClick={() => setIsOpen(false)}>
               <HomeIcon />
               Home
             </Link>
           </li>
+
           <li className="nav-item-new">
-            <Link
-              to="/ai-assistant"
-              className={`nav-link-new ${isActive('/ai-assistant') ? 'active' : ''}`}
-              onClick={() => setIsOpen(false)}
-            >
+            <Link to="/ai-assistant" className={`nav-link-new ${isActive("/ai-assistant") ? "active" : ""}`} onClick={() => setIsOpen(false)}>
               <ChatIcon />
               AI Assistant
             </Link>
           </li>
+
           <li className="nav-item-new">
-            <Link
-              to="/risk-assessment"
-              className={`nav-link-new ${isActive('/risk-assessment') ? 'active' : ''}`}
-              onClick={() => setIsOpen(false)}
-            >
+            <Link to="/risk-assessment" className={`nav-link-new ${isActive("/risk-assessment") ? "active" : ""}`} onClick={() => setIsOpen(false)}>
               <ActivityIcon />
               Risk Assessment
             </Link>
           </li>
+
           <li className="nav-item-new">
-            <Link
-              to="/find-help"
-              className={`nav-link-new ${isActive('/find-help') ? 'active' : ''}`}
-              onClick={() => setIsOpen(false)}
-            >
+            <Link to="/find-help" className={`nav-link-new ${isActive("/find-help") ? "active" : ""}`} onClick={() => setIsOpen(false)}>
               <MapPinIcon />
               Find Help
             </Link>
           </li>
+
           <li className="nav-item-new">
-            <Link
-              to="/poison-management"
-              className={`nav-link-new ${isActive('/poison-management') || isActive('/antidotes') ? 'active' : ''}`}
-              onClick={() => setIsOpen(false)}
-            >
+            <Link to="/poison-management" className={`nav-link-new ${isActive("/poison-management") || isActive("/antidotes") ? "active" : ""}`} onClick={() => setIsOpen(false)}>
               <PillIcon />
               Antidotes
             </Link>
           </li>
+
           <li className="nav-item-new">
-            <Link
-              to="/profile"
-              className={`nav-link-new ${isActive('/profile') ? 'active' : ''}`}
-              onClick={() => setIsOpen(false)}
-            >
+            <Link to="/profile" className={`nav-link-new ${isActive("/profile") ? "active" : ""}`} onClick={() => setIsOpen(false)}>
               <UserIcon />
               Profile
             </Link>
           </li>
+
+          {/* ✅ LOGIN or LOGOUT */}
           <li className="nav-item-new">
-            <Link
-              to="/login"
-              className={`nav-link-new ${isActive('/login') ? 'active' : ''}`}
-              onClick={() => setIsOpen(false)}
-            >
-              <UserIcon />
-              Login
-            </Link>
+            {isLoggedIn ? (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className={`nav-link-new ${isActive("/logout") ? "active" : ""}`}
+                style={{ background: "transparent", border: "none", cursor: "pointer" }}
+              >
+                <UserIcon />
+                Logout
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className={`nav-link-new ${isActive("/login") ? "active" : ""}`}
+                onClick={() => setIsOpen(false)}
+              >
+                <UserIcon />
+                Login
+              </Link>
+            )}
           </li>
+
           <li className="nav-item-new">
-            <a
-              href="tel:102"
-              className="nav-link-new emergency-btn-new"
-              onClick={() => setIsOpen(false)}
-            >
+            <a href="tel:102" className="nav-link-new emergency-btn-new" onClick={() => setIsOpen(false)}>
               <PhoneIcon />
               Call 102
             </a>

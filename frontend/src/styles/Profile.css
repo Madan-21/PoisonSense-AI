@@ -635,3 +635,74 @@
     gap: 4px;
   }
 }
+/* =========================
+   Add Contact Modal Styles
+   ========================= */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-box {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 22px;
+  border-radius: 14px;
+  width: 420px;
+  max-width: 92%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
+}
+
+.modal-box h3 {
+  margin: 0 0 14px 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.modal-box input {
+  width: 100%;
+  padding: 12px 14px;
+  margin-top: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+}
+
+.modal-box input:focus {
+  outline: none;
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.modal-actions button {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.modal-actions .btn-cancel {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.modal-actions .btn-save {
+  background: #2563EB;
+  color: white;
+}

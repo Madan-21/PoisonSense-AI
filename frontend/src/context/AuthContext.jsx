@@ -109,15 +109,26 @@ export const AuthProvider = ({ children }) => {
     setPendingVerification(null);
   };
 
-  // Logout function
-  const logout = async () => {
-    try {
-      await authApi.logout();
-    } finally {
-      setUser(null);
-      setPendingVerification(null);
-    }
-  };
+  // logout
+  const logout = () => {
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("user");
+  setUser(null);
+
+  // ❌ DO NOT navigate to /login here
+  // Let Profile.jsx handle redirect
+};
+
+
+  // // Logout function
+  // const logout = async () => {
+  //   try {
+  //     await authApi.logout();
+  //   } finally {
+  //     setUser(null);
+  //     setPendingVerification(null);
+  //   }
+  // };
 
   // Refresh user data
   const refreshUser = async () => {
