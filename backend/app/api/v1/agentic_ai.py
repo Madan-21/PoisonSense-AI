@@ -51,7 +51,7 @@ class AgentResponse(BaseModel):
     identified_poison: Optional[str] = Field(None, description="Identified or suspected poison")
     confidence: Optional[float] = Field(None, description="Confidence in identification")
     first_aid: Optional[List[str]] = Field(None, description="First aid steps if applicable")
-    antidote: Optional[Dict[str, Any]] = Field(None, description="Antidote information")
+    antidote: Optional[Any] = Field(None, description="Antidote information (can be dict or string)")
     nearby_hospitals: Optional[List[Dict]] = Field(None, description="Nearby hospitals")
     emergency_numbers: Optional[Dict] = Field(None, description="Emergency contact numbers")
     tools_used: Optional[List[str]] = Field(None, description="Tools used to generate response")

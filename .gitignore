@@ -8,6 +8,11 @@ __pycache__/
 dist/
 build/
 
+# Database files (auto-generated on first run)
+*.db
+*.sqlite
+*.sqlite3
+
 # Virtual environments
 venv/
 .venv/

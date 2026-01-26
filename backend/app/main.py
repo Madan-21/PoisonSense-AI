@@ -2,11 +2,31 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import os
 
 from app.core.config import settings
 from app.api.v1 import api_router
-from app.db.session import engine
+from app.db.session import engine, SessionLocal
 from app.db.base import Base
+
+def check_and_seed_database():
+    """Check if database needs seeding and seed if empty"""
+    from app.models.poison_center import PoisonCenter
+    
+    db = SessionLocal()
+    try:
+        # Check if database has any poison centers (indicates seeded)
+        center_count = db.query(PoisonCenter).count()
+        if center_count == 0:
+            print("📦 Empty database detected - seeding initial data...")
+            from app.db.init_db import init_database
+            db.close()  # Close before init_database creates its own session
+            init_database()
+            return
+    except Exception as e:
+        print(f"⚠️ Database check error: {e}")
+    finally:
+        db.close()
 
 # Create all database tables on startup
 @asynccontextmanager
@@ -15,6 +35,9 @@ async def lifespan(app: FastAPI):
     # Create database tables
     Base.metadata.create_all(bind=engine)
     print("✅ Database tables created successfully")
+    
+    # Auto-seed database if empty (for fresh clones)
+    check_and_seed_database()
     
     # Optionally preload ML model
     try:

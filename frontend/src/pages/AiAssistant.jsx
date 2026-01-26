@@ -20,22 +20,23 @@ const AiAssistant = () => {
     {
       id: 1,
       type: 'bot',
-      text: `🤖 **Welcome to PoisonSense AI - Your Intelligent Toxicology Assistant**
+      text: `Hello! 👋 I'm **PoisonSense AI**, your friendly assistant for poison information and emergency guidance.
 
-I'm an advanced Agentic AI designed to help you in poison emergencies. I can:
+I can help you with:
+- 🧪 **Poison Information** - Learn about various toxic substances
+- 💊 **Antidote Information** - What antidotes exist (for awareness)
+- 🩺 **Symptom Identification** - Understand symptoms of poisoning
+- 🏥 **Find Help** - Locate nearby hospitals and poison centers
+- 🚨 **Emergency Guidance** - What to do in poisoning cases
 
-• 🔍 **Analyze symptoms** to identify possible poisons
-• 🩹 **Provide first aid** instructions
-• 💊 **Look up antidotes** and treatment protocols
-• 🏥 **Find nearby hospitals** and poison centers
-• ⚠️ **Assess severity** and guide emergency response
+**How can I assist you today?**
 
-**How can I help you today?** Please describe the situation - what substance was involved, what symptoms are observed, and how long ago did exposure occur?
+Just type your question, or try one of the quick actions below! 💬
 
-📞 **Emergency Numbers (Nepal):**
-• Emergency: **102**
-• Poison Control (NPIC-TUTH): **+977-1-4412505**
-• Toll-Free: **1102**`,
+---
+⚠️ *If this is an emergency, please call **102** immediately!*
+
+*I'm here to provide information and guidance. For medical treatment, always consult a healthcare professional.*`,
       time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       isWelcome: true
     }
@@ -202,13 +203,20 @@ I'm an advanced Agentic AI designed to help you in poison emergencies. I can:
     setMessages([{
       id: 1,
       type: 'bot',
-      text: `🤖 **New conversation started!**
+      text: `Hi there! 👋 Starting a fresh conversation.
 
-I'm ready to help you with a new poison-related inquiry. Please describe the situation - what substance was involved, what symptoms are observed, and how long ago did exposure occur?
+I'm **PoisonSense AI** - how can I help you today?
 
-📞 **Emergency Numbers (Nepal):**
-• Emergency: **102**
-• Poison Control (NPIC-TUTH): **+977-1-4412505**`,
+You can ask me about:
+- Poison information and symptoms
+- Antidotes and first aid guidance
+- Finding nearby hospitals
+- Emergency guidance
+
+Just type your question! 💬
+
+---
+🚨 *Emergency? Call **102** immediately!*`,
       time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
     }]);
     setSessionId(null);
