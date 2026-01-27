@@ -13,15 +13,32 @@ export default function FindHelp() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [locationStatus, setLocationStatus] = useState("idle"); // idle, loading, granted, denied
+  const [showLocationModal, setShowLocationModal] = useState(true);
 
   // Get user location and fetch nearby resources
   const getLocationAndFetchData = async () => {
     setLocationStatus("loading");
     setError(null);
     
+    // First check for stored location from Home page
+    const storedLocation = localStorage.getItem('userLocation');
+    if (storedLocation) {
+      try {
+        const location = JSON.parse(storedLocation);
+        setUserLocation(location);
+        setLocationStatus("granted");
+        setShowLocationModal(false);
+        await fetchNearbyData(location.latitude, location.longitude);
+        return;
+      } catch (e) {
+        console.log('Error parsing stored location:', e);
+      }
+    }
+    
     if (!navigator.geolocation) {
       setError("Geolocation is not supported by your browser");
       setLocationStatus("denied");
+      setShowLocationModal(false);
       // Fetch all data without location
       fetchAllData();
       return;
@@ -31,12 +48,17 @@ export default function FindHelp() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         setUserLocation({ latitude, longitude });
+        // Store for other pages
+        localStorage.setItem('userLocation', JSON.stringify({ latitude, longitude }));
         setLocationStatus("granted");
+        setShowLocationModal(false);
+        setError(null); // Clear any previous errors
         await fetchNearbyData(latitude, longitude);
       },
       (error) => {
         console.error("Location error:", error);
         setLocationStatus("denied");
+        setShowLocationModal(false);
         setError("Location access denied. Showing all centers.");
         // Fetch all data without location
         fetchAllData();
@@ -93,9 +115,23 @@ export default function FindHelp() {
     }
   };
 
-  // Auto-load on mount
+  // Auto-load on mount - check for stored location first
   useEffect(() => {
-    getLocationAndFetchData();
+    const storedLocation = localStorage.getItem('userLocation');
+    if (storedLocation) {
+      try {
+        const location = JSON.parse(storedLocation);
+        setUserLocation(location);
+        setLocationStatus("granted");
+        setShowLocationModal(false);
+        setError(null); // Clear any previous errors
+        fetchNearbyData(location.latitude, location.longitude);
+      } catch (e) {
+        console.log('Error parsing stored location:', e);
+        // Keep modal visible for user to grant permission
+      }
+    }
+    // If no stored location, keep modal visible for user to grant permission
   }, []);
 
   // Filter displayed items
@@ -155,7 +191,7 @@ export default function FindHelp() {
           </button>
         </div>
         
-        {error && (
+        {error && locationStatus !== "granted" && (
           <div style={{ color: '#dc3545', padding: '10px', textAlign: 'center' }}>
             ⚠️ {error}
           </div>
@@ -204,7 +240,7 @@ export default function FindHelp() {
       {/* MAP VIEW - WITH LOCATION PERMISSION REQUEST */}
       {viewType === "map" && (
         <section className="map-view-section">
-          {locationStatus === "idle" || locationStatus === "denied" ? (
+          {showLocationModal && locationStatus !== "granted" ? (
             // Location Permission Request Modal
             <div style={{
               background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
@@ -236,7 +272,7 @@ export default function FindHelp() {
 
               <button
                 onClick={getLocationAndFetchData}
-                disabled={loading}
+                disabled={locationStatus === "loading"}
                 style={{
                   background: "linear-gradient(135deg, #28a745 0%, #1a5f2a 100%)",
                   color: "white",
@@ -245,18 +281,19 @@ export default function FindHelp() {
                   borderRadius: "30px",
                   fontSize: "18px",
                   fontWeight: "bold",
-                  cursor: loading ? "not-allowed" : "pointer",
+                  cursor: locationStatus === "loading" ? "not-allowed" : "pointer",
                   marginBottom: "15px",
                   width: "100%",
                   maxWidth: "300px"
                 }}
               >
-                {loading ? "⏳ Getting Location..." : "📍 Allow Location Access"}
+                {locationStatus === "loading" ? "⏳ Getting Location..." : "📍 Allow Location Access"}
               </button>
 
               <div>
                 <button
                   onClick={() => {
+                    setShowLocationModal(false);
                     setLocationStatus("denied");
                     fetchAllData();
                   }}
@@ -273,7 +310,7 @@ export default function FindHelp() {
                 </button>
               </div>
 
-              {locationStatus === "denied" && (
+              {error && (
                 <div style={{
                   marginTop: "20px",
                   padding: "15px",
@@ -282,8 +319,7 @@ export default function FindHelp() {
                   color: "#721c24",
                   fontSize: "14px"
                 }}>
-                  ⚠️ Location access was denied. Showing all centers. You can enable location
-                  in your browser settings to see nearby services.
+                  ⚠️ {error}
                 </div>
               )}
             </div>

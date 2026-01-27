@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 // SVG Icons matching Figma design
 const HomeIcon = () => (
@@ -53,6 +54,7 @@ const PillIcon = () => (
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const isActive = (path) => location.pathname === path;
 
@@ -91,16 +93,6 @@ export default function Navbar() {
           </li>
           <li className="nav-item-new">
             <Link
-              to="/risk-assessment"
-              className={`nav-link-new ${isActive('/risk-assessment') ? 'active' : ''}`}
-              onClick={() => setIsOpen(false)}
-            >
-              <ActivityIcon />
-              Risk Assessment
-            </Link>
-          </li>
-          <li className="nav-item-new">
-            <Link
               to="/find-help"
               className={`nav-link-new ${isActive('/find-help') ? 'active' : ''}`}
               onClick={() => setIsOpen(false)}
@@ -119,26 +111,29 @@ export default function Navbar() {
               Antidotes
             </Link>
           </li>
-          <li className="nav-item-new">
-            <Link
-              to="/profile"
-              className={`nav-link-new ${isActive('/profile') ? 'active' : ''}`}
-              onClick={() => setIsOpen(false)}
-            >
-              <UserIcon />
-              Profile
-            </Link>
-          </li>
-          <li className="nav-item-new">
-            <Link
-              to="/login"
-              className={`nav-link-new ${isActive('/login') ? 'active' : ''}`}
-              onClick={() => setIsOpen(false)}
-            >
-              <UserIcon />
-              Login
-            </Link>
-          </li>
+          {user ? (
+            <li className="nav-item-new">
+              <Link
+                to="/profile"
+                className={`nav-link-new ${isActive('/profile') ? 'active' : ''}`}
+                onClick={() => setIsOpen(false)}
+              >
+                <UserIcon />
+                Profile
+              </Link>
+            </li>
+          ) : (
+            <li className="nav-item-new">
+              <Link
+                to="/login"
+                className={`nav-link-new ${isActive('/login') ? 'active' : ''}`}
+                onClick={() => setIsOpen(false)}
+              >
+                <UserIcon />
+                Login
+              </Link>
+            </li>
+          )}
           <li className="nav-item-new">
             <a
               href="tel:102"

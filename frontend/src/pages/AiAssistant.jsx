@@ -42,18 +42,17 @@ Just type your question, or try one of the quick actions below! 💬
     }
   ]);
 
-  // Get user location on mount
+  // Get user location from localStorage (set on Home page)
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
-        },
-        (error) => console.log('Location not available:', error)
-      );
+    const storedLocation = localStorage.getItem('userLocation');
+    if (storedLocation) {
+      try {
+        const location = JSON.parse(storedLocation);
+        setUserLocation(location);
+        console.log('Using stored location:', location);
+      } catch (e) {
+        console.log('Error parsing stored location:', e);
+      }
     }
   }, []);
 

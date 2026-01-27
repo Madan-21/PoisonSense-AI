@@ -5,7 +5,6 @@ import Signup from "./pages/Signup";
 import Register from "./pages/Register";
 import AiAssistant from "./pages/AiAssistant";
 import FindHelp from "./pages/FindHelp";
-import RiskAssessment from "./pages/RiskAssessment";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import AdminPanel from "./pages/AdminPanel";
@@ -24,7 +23,6 @@ export default function AppRoutes() {
       <Route path="/ai-assistant" element={<AiAssistant />} />
       <Route path="/find-help" element={<FindHelp />} />
       <Route path="/findhelp" element={<FindHelp />} />
-      <Route path="/risk-assessment" element={<RiskAssessment />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/admin" element={<AdminPanel />} />

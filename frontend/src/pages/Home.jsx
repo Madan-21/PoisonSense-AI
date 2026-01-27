@@ -1,10 +1,29 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PoisonMap from "../components/PoisonMap";
 
 export default function Home() {
+  // Request location permission on Home page load
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // Store location in localStorage for use in other pages
+          localStorage.setItem('userLocation', JSON.stringify({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          }));
+          console.log('Location obtained:', position.coords.latitude, position.coords.longitude);
+        },
+        (error) => {
+          console.log('Location permission denied or unavailable:', error.message);
+        }
+      );
+    }
+  }, []);
+
   return (
     <>
       <Navbar />
@@ -148,7 +167,7 @@ export default function Home() {
             </div>
             <h3>Risk Assessment</h3>
             <p>Evaluate symptoms and analyze immediate risk level</p>
-            <Link to="/risk-assessment" className="learn-more">
+            <Link to="/ai-assistant" className="learn-more">
               Learn more →
             </Link>
           </div>
