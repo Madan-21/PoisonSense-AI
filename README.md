@@ -1,6 +1,6 @@
 # 🏥 PoisonSense AI
 
-AI-powered poison identification and emergency response system for Nepal & India.
+AI-powered poison identification and emergency response system for Nepal.
 
 ## ✨ Features
 
