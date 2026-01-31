@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { centerApi } from "../api/centerApi";
+import { getErrorMessage } from "../utils/errorHandler";
 
 export default function PoisonCenters() {
   const [centers, setCenters] = useState([]);
@@ -20,7 +21,7 @@ export default function PoisonCenters() {
       setCenters(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error fetching poison centers:", err);
-      setError("Failed to load poison centers. Please check if backend is running.");
+      setError(getErrorMessage(err, "Failed to load poison centers. Please check if backend is running."));
     } finally {
       setLoading(false);
     }

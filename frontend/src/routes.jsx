@@ -12,6 +12,14 @@ import DoctorVerification from "./pages/DoctorVerification";
 import PoisonCenters from "./pages/PoisonCenters";
 import AnalyzePoison from "./pages/AnalyzePoison";
 import PoisonManagement from "./pages/PoisonManagement";
+import Blog from "./pages/Blog";
+import BlogDetail from "./pages/BlogDetail";
+import SubmitArticle from "./pages/SubmitArticle";
+import AboutUs from "./pages/AboutUs";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import ContactSupport from "./pages/ContactSupport";
+import MedicalDisclaimer from "./pages/MedicalDisclaimer";
 
 export default function AppRoutes() {
   return (
@@ -22,15 +30,23 @@ export default function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/ai-assistant" element={<AiAssistant />} />
       <Route path="/find-help" element={<FindHelp />} />
-      <Route path="/findhelp" element={<FindHelp />} />
+ 
       <Route path="/profile" element={<Profile />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/admin" element={<AdminPanel />} />
       <Route path="/doctor-verification" element={<DoctorVerification />} />
       <Route path="/poison-centers" element={<PoisonCenters />} />
-      <Route path="/analyze-poison" element={<AnalyzePoison />} />
       <Route path="/poison-management" element={<PoisonManagement />} />
       <Route path="/antidotes" element={<PoisonManagement />} />
+      <Route path="/blog" element={<Blog />} />
+      <Route path="/blog/:id" element={<BlogDetail />} />
+      <Route path="/submit-article" element={<SubmitArticle />} />
+      <Route path="/about" element={<AboutUs />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/contact" element={<ContactSupport />} />
+      <Route path="/disclaimer" element={<MedicalDisclaimer />} />
     </Routes>
   );
 }
+

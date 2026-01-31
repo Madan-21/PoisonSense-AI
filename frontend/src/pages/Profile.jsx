@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { userApi } from '../api/userApi';
+import { getErrorMessage } from '../utils/errorHandler';
 import '../styles/Profile.css';
 
 const Profile = () => {
@@ -15,7 +16,7 @@ const Profile = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   
-  const { user, logout } = useAuth();
+  const { user, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   
   const [settings, setSettings] = useState({
@@ -34,6 +35,13 @@ const Profile = () => {
   });
 
   const [emergencyContacts, setEmergencyContacts] = useState([]);
+  const [showAddContactModal, setShowAddContactModal] = useState(false);
+  const [newContact, setNewContact] = useState({
+    name: '',
+    relationship: '',
+    phone: '',
+    isPrimary: false
+  });
 
   // Fetch user profile on mount
   useEffect(() => {
@@ -41,6 +49,12 @@ const Profile = () => {
       try {
         setIsLoading(true);
         const profile = await userApi.getProfile();
+        
+        console.log('Profile loaded from API:', {
+          dateOfBirth: profile.date_of_birth,
+          formatted: profile.date_of_birth ? profile.date_of_birth.split('T')[0] : ''
+        });
+        
         setFormData({
           fullName: profile.full_name || '',
           email: profile.email || '',
@@ -68,12 +82,16 @@ const Profile = () => {
       }
     };
     
+    // Only redirect if auth is not loading and there's no user
+    if (!authLoading && !user) {
+      navigate('/login');
+      return;
+    }
+    
     if (user) {
       fetchProfile();
-    } else {
-      navigate('/login');
     }
-  }, [user, navigate]);
+  }, [user, navigate, authLoading]);
 
   // Apply theme to document
   useEffect(() => {
@@ -82,6 +100,15 @@ const Profile = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    if (name === 'dateOfBirth') {
+      console.log('Date input changed:', {
+        value,
+        type: typeof value,
+        length: value?.length
+      });
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -121,7 +148,43 @@ const Profile = () => {
       
       // Only include optional fields if they have values
       if (formData.dateOfBirth) {
-        updateData.date_of_birth = formData.dateOfBirth;
+        // Backend expects full datetime, not just date
+        // Convert YYYY-MM-DD to YYYY-MM-DDTHH:MM:SS format
+        let dateValue = formData.dateOfBirth.trim();
+        
+        // Remove any extra spaces
+        dateValue = dateValue.replace(/\s+/g, '');
+        
+        // Check different formats and convert to YYYY-MM-DD
+        let isoDate;
+        if (dateValue.includes('/')) {
+          const parts = dateValue.split('/');
+          if (parts.length === 3) {
+            // Determine if it's DD/MM/YYYY or MM/DD/YYYY or YYYY/MM/DD
+            if (parts[0].length === 4) {
+              // YYYY/MM/DD
+              isoDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+            } else if (parts[2].length === 4) {
+              // DD/MM/YYYY or MM/DD/YYYY - assume DD/MM/YYYY for international format
+              isoDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+            }
+          }
+        } else if (dateValue.includes('-') && dateValue.length === 10) {
+          // Already in YYYY-MM-DD format
+          isoDate = dateValue;
+        } else {
+          // Try to parse as is
+          isoDate = dateValue;
+        }
+        
+        // Add time component to make it a valid datetime: YYYY-MM-DDTHH:MM:SS
+        updateData.date_of_birth = `${isoDate}T00:00:00`;
+        
+        console.log('Date conversion:', {
+          original: formData.dateOfBirth,
+          isoDate: isoDate,
+          datetime: updateData.date_of_birth
+        });
       }
       if (formData.bloodType) {
         updateData.blood_group = formData.bloodType;
@@ -135,14 +198,14 @@ const Profile = () => {
       
       console.log('Saving profile:', updateData);
       const result = await userApi.updateProfile(updateData);
-      console.log('Profile saved:', result);
+      console.log('Profile saved successfully:', result);
       
       setSuccessMessage('✅ Profile updated successfully!');
       setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err) {
       console.error('Profile save error:', err);
-      const errorMsg = err.response?.data?.detail || err.message || 'Failed to save changes';
-      setError(`❌ ${errorMsg}. Please try again.`);
+      const errorMsg = getErrorMessage(err, 'Failed to save changes');
+      setError(`❌ ${errorMsg}`);
       setTimeout(() => setError(null), 5000);
     } finally {
       setIsSaving(false);
@@ -155,6 +218,64 @@ const Profile = () => {
       navigate('/login');
     } catch (err) {
       console.error('Logout failed:', err);
+    }
+  };
+
+  const handleAddContact = async () => {
+    if (!newContact.name || !newContact.phone || !newContact.relationship) {
+      setError('Please fill in all contact fields');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const contactData = {
+        name: newContact.name,
+        phone: newContact.phone,
+        relationship: newContact.relationship,
+        is_primary: newContact.isPrimary
+      };
+
+      const addedContact = await userApi.addEmergencyContact(contactData);
+      
+      setEmergencyContacts([...emergencyContacts, {
+        id: addedContact.id,
+        name: addedContact.name,
+        relationship: addedContact.relation_type,
+        phone: addedContact.phone,
+        isPrimary: addedContact.is_primary
+      }]);
+
+      setNewContact({ name: '', relationship: '', phone: '', isPrimary: false });
+      setShowAddContactModal(false);
+      setSuccessMessage('✅ Emergency contact added successfully!');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err) {
+      console.error('Add contact error:', err);
+      const errorMsg = getErrorMessage(err, 'Failed to add contact');
+      setError(`❌ ${errorMsg}. Please try again.`);
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteContact = async (contactId) => {
+    if (!window.confirm('Are you sure you want to delete this contact?')) {
+      return;
+    }
+
+    try {
+      await userApi.deleteEmergencyContact(contactId);
+      setEmergencyContacts(emergencyContacts.filter(c => c.id !== contactId));
+      setSuccessMessage('✅ Contact deleted successfully!');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err) {
+      console.error('Delete contact error:', err);
+      const errorMsg = getErrorMessage(err, 'Failed to delete contact');
+      setError(`❌ ${errorMsg}. Please try again.`);
+      setTimeout(() => setError(null), 3000);
     }
   };
 
@@ -175,6 +296,21 @@ const Profile = () => {
       </svg>
     )}
   ];
+
+  // Show loading state while auth is initializing
+  if (authLoading) {
+    return (
+      <div className="profile-page">
+        <Navbar />
+        <main className="profile-content">
+          <div className="content-container" style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ fontSize: '18px', color: '#64748b' }}>⏳ Loading...</div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="profile-page">
@@ -251,6 +387,8 @@ const Profile = () => {
                       name="dateOfBirth"
                       value={formData.dateOfBirth}
                       onChange={handleInputChange}
+                      max={new Date().toISOString().split('T')[0]}
+                      placeholder="Select your date of birth"
                     />
                   </div>
                 </div>
@@ -263,6 +401,7 @@ const Profile = () => {
                       value={formData.bloodType}
                       onChange={handleInputChange}
                     >
+                      <option value="">Select Blood Type</option>
                       <option value="A+">A+</option>
                       <option value="A-">A-</option>
                       <option value="B+">B+</option>
@@ -322,7 +461,10 @@ const Profile = () => {
               <div className="emergency-contacts-form">
                 <div className="emergency-header">
                   <h2>Emergency Contacts</h2>
-                  <button className="add-contact-btn-green">
+                  <button 
+                    className="add-contact-btn-green"
+                    onClick={() => setShowAddContactModal(true)}
+                  >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
                       <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                     </svg>
@@ -348,12 +490,11 @@ const Profile = () => {
                       </div>
                     </div>
                     <div className="contact-actions">
-                      <button className="icon-btn edit-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#2563EB">
-                          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                        </svg>
-                      </button>
-                      <button className="icon-btn delete-icon">
+                      <button 
+                        className="icon-btn delete-icon"
+                        onClick={() => handleDeleteContact(contact.id)}
+                        title="Delete contact"
+                      >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="#EF4444">
                           <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                         </svg>
@@ -466,7 +607,7 @@ const Profile = () => {
                 <button className="save-settings-btn" onClick={handleSaveSettings}>
                   Save Settings
                 </button>
-                <button className="log-out-btn" onClick={handleLogOut}>
+                <button className="log-out-btn" onClick={handleLogout}>
                   Log Out
                 </button>
               </div>
@@ -474,6 +615,84 @@ const Profile = () => {
           </div>
         </div>
       </main>
+
+      {/* Add Contact Modal */}
+      {showAddContactModal && (
+        <div className="modal-overlay" onClick={() => setShowAddContactModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Add Emergency Contact</h3>
+              <button 
+                className="modal-close"
+                onClick={() => setShowAddContactModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Contact Name *</label>
+                <input
+                  type="text"
+                  value={newContact.name}
+                  onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
+                  placeholder="Enter contact name"
+                />
+              </div>
+              <div className="form-group">
+                <label>Relationship *</label>
+                <select
+                  value={newContact.relationship}
+                  onChange={(e) => setNewContact({ ...newContact, relationship: e.target.value })}
+                >
+                  <option value="">Select relationship</option>
+                  <option value="Parent">Parent</option>
+                  <option value="Spouse">Spouse</option>
+                  <option value="Sibling">Sibling</option>
+                  <option value="Child">Child</option>
+                  <option value="Friend">Friend</option>
+                  <option value="Guardian">Guardian</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Phone Number *</label>
+                <input
+                  type="tel"
+                  value={newContact.phone}
+                  onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
+                  placeholder="Enter phone number"
+                />
+              </div>
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={newContact.isPrimary}
+                    onChange={(e) => setNewContact({ ...newContact, isPrimary: e.target.checked })}
+                  />
+                  <span>Set as primary contact</span>
+                </label>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn-cancel"
+                onClick={() => setShowAddContactModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-save"
+                onClick={handleAddContact}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Adding...' : 'Add Contact'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <Footer />

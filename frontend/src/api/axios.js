@@ -35,18 +35,18 @@ api.interceptors.response.use(
       const { status, data } = error.response;
       
       if (status === 401) {
-        // Token expired or invalid - clear and redirect
+        // Token expired or invalid - only clear storage, don't auto-redirect
+        // Let the auth context handle the redirect
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
       }
       
-      // Return error message from backend
-      const message = data.detail || data.message || 'An error occurred';
-      return Promise.reject(new Error(message));
+      // Keep the full error response for better error handling
+      return Promise.reject(error);
     } else if (error.request) {
       // Network error
-      return Promise.reject(new Error('Network error. Please check your connection.'));
+      error.message = 'Network error. Please check your connection.';
+      return Promise.reject(error);
     }
     return Promise.reject(error);
   }

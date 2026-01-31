@@ -51,6 +51,19 @@ const PillIcon = () => (
   </svg>
 );
 
+const BookIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+  </svg>
+);
+
+const ShieldIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+  </svg>
+);
+
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
@@ -111,6 +124,28 @@ export default function Navbar() {
               Antidotes
             </Link>
           </li>
+          <li className="nav-item-new">
+            <Link
+              to="/blog"
+              className={`nav-link-new ${isActive('/blog') || location.pathname.startsWith('/blog/') ? 'active' : ''}`}
+              onClick={() => setIsOpen(false)}
+            >
+              <BookIcon />
+              Blog
+            </Link>
+          </li>
+          {user && user.role === 'admin' && (
+            <li className="nav-item-new">
+              <Link
+                to="/admin"
+                className={`nav-link-new ${isActive('/admin') ? 'active' : ''}`}
+                onClick={() => setIsOpen(false)}
+              >
+                <ShieldIcon />
+                Admin
+              </Link>
+            </li>
+          )}
           {user ? (
             <li className="nav-item-new">
               <Link
@@ -119,7 +154,7 @@ export default function Navbar() {
                 onClick={() => setIsOpen(false)}
               >
                 <UserIcon />
-                Profile
+                {user.full_name || user.email?.split('@')[0] || 'Profile'}
               </Link>
             </li>
           ) : (
