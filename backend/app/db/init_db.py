@@ -7,7 +7,9 @@ from app.models.doctor import Doctor, VerificationStatus
 from app.models.hospital import Hospital, ToxicologyLab, HospitalType
 from app.models.poison_center import PoisonCenter, AntidoteInventory
 from app.models.poison import Poison, ManagementProtocol, PoisonCategory, SeverityLevel
+from app.models.poison_syndrome import PoisonSyndrome
 from app.models.ai_log import AIModelVersion
+from app.models.blog_submission import BlogSubmission
 from app.core.security import get_password_hash
 
 def create_tables():
@@ -712,6 +714,570 @@ def seed_ai_model_version(db: Session):
         db.commit()
         print("✅ AI model version recorded")
 
+def seed_poison_syndromes(db: Session):
+    """Seed Poison Syndrome/Toxidrome data - Based on clinical presentation patterns"""
+    syndromes_data = [
+        {
+            "name": "Sympathomimetic Syndrome",
+            "description": "Caused by substances that stimulate the sympathetic nervous system",
+            "common_agents": [
+                "Amphetamines",
+                "Cocaine", 
+                "Cathinones",
+                "Ephedrine",
+                "Methamphetamine",
+                "Pseudoephedrine",
+                "Designer phenylethylamines and tryptamines (eg. MDMA, MDEA)",
+                "Caffeine",
+                "Theophylline"
+            ],
+            "mental_status": ["Hypervigilance", "Agitation (can be violent)", "Hyperactive delirium", "Hallucinations", "Paranoia"],
+            "vital_signs": {
+                "temperature": "Increased",
+                "heart_rate": "Increased",
+                "respiratory_rate": "Increased",
+                "blood_pressure": "Increased",
+                "pulse": "Widened pulse pressure"
+            },
+            "pupils": {"size": "Dilated", "reactivity": "Normal"},
+            "skin": {"moisture": "Diaphoresis (sweating)", "temperature": "Warm", "color": "Normal or flushed"},
+            "other_features": ["Tremor", "Seizures", "Mydriasis (dilated pupils)"],
+            "treatment_priorities": ["Sedation", "Cooling for hyperthermia", "Control agitation", "Monitor for seizures"],
+            "specific_antidotes": [],
+            "supportive_care": "Benzodiazepines for agitation and seizures, external cooling measures, fluid resuscitation, cardiac monitoring"
+        },
+        {
+            "name": "Anticholinergic Syndrome",
+            "description": "Caused by substances that block acetylcholine receptors",
+            "common_agents": [
+                "Diphenhydramine (and other antihistamines)",
+                "Atropine",
+                "Benztropine",
+                "Scopolamine",
+                "Dicyclomine",
+                "Tricyclic antidepressants",
+                "Jimson weed (Datura)",
+                "Deadly nightshade (Belladonna)"
+            ],
+            "mental_status": ["Hypervigilance", "Agitation (usually easily controlled)", "Hyperactive delirium", "Hallucinations (picking at objects in air)", "Mumbling speech"],
+            "vital_signs": {
+                "temperature": "Increased",
+                "heart_rate": "Increased (but may be normal in early poisoning)",
+                "respiratory_rate": "Increased or normal",
+                "blood_pressure": "Increased or normal"
+            },
+            "pupils": {"size": "Dilated", "reactivity": "Sluggish or unreactive"},
+            "skin": {"moisture": "Dry and flushed", "temperature": "Hot", "color": "Flushed"},
+            "other_features": [
+                "Dry mucous membranes",
+                "Decreased bowel sounds",
+                "Urinary retention",
+                "Choreiform movements (jerky, involuntary movements)",
+                "Seizures (rare)"
+            ],
+            "treatment_priorities": ["Cooling", "Sedation if agitated", "Monitor temperature", "Urinary catheterization if needed"],
+            "specific_antidotes": ["Physostigmine (rarely used, only in severe cases)"],
+            "supportive_care": "External cooling, benzodiazepines for severe agitation, fluids, monitoring"
+        },
+        {
+            "name": "Hallucinogenic Syndrome",
+            "description": "Caused by psychedelic substances",
+            "common_agents": [
+                "Designer phenylethylamines and tryptamines (eg. MDMA, MDEA)",
+                "Ketamine",
+                "Phencyclidine (PCP)",
+                "Methamphetamine",
+                "LSD",
+                "Psilocybin",
+                "Mescaline (peyote)",
+                "Synthetic cannabinoids"
+            ],
+            "mental_status": [
+                "Hallucinations",
+                "Perceptual distortions (typically visual)",
+                "Depersonalization",
+                "Synesthesia (mixing of senses)",
+                "Time/space distortion",
+                "Agitation (with or without delirium)"
+            ],
+            "vital_signs": {
+                "temperature": "Increased or normal",
+                "heart_rate": "Increased or normal",
+                "respiratory_rate": "Increased or normal",
+                "blood_pressure": "Increased or normal"
+            },
+            "pupils": {"size": "Variable", "reactivity": "Normal to sluggish"},
+            "skin": {"moisture": "Variable", "temperature": "Variable", "color": "Normal to flushed"},
+            "other_features": [
+                "Nystagmus (especially with phencyclidine, ketamine)",
+                "Paranoia",
+                "Mystical experiences",
+                "Enhanced sensory perception"
+            ],
+            "treatment_priorities": ["Calm environment", "Reassurance", "Sedation if severely agitated"],
+            "specific_antidotes": [],
+            "supportive_care": "\"Talk-down\" technique, quiet environment, benzodiazepines for severe agitation"
+        },
+        {
+            "name": "Serotonin Syndrome",
+            "description": "Caused by excessive serotonergic activity",
+            "common_agents": [
+                "MAOIs",
+                "Tricyclic antidepressants", 
+                "SSRIs and SNRIs",
+                "Dextromethorphan",
+                "Meperidine",
+                "Fentanyl",
+                "Tramadol",
+                "St. John's Wort",
+                "5-HTP supplements"
+            ],
+            "mental_status": ["Agitation", "Hyperactive delirium", "Confusion", "Restlessness", "Altered awareness", "Anxiety"],
+            "vital_signs": {
+                "temperature": "Increased",
+                "heart_rate": "Increased",
+                "respiratory_rate": "Increased",
+                "blood_pressure": "Variable"
+            },
+            "pupils": {"size": "Dilated", "reactivity": "Normal"},
+            "skin": {"moisture": "Diaphoresis", "temperature": "Warm to hot", "color": "Flushed"},
+            "other_features": [
+                "Hyperreflexia",
+                "Clonus (rhythmic muscle contractions)",
+                "Tremor",
+                "Hyperthermia",
+                "Muscle rigidity",
+                "Mydriasis",
+                "Ocular clonus (eye movements)",
+                "Akathisia (inability to stay still)"
+            ],
+            "treatment_priorities": ["Discontinue serotonergic agents", "Cooling", "Sedation", "Monitor for complications"],
+            "specific_antidotes": ["Cyproheptadine (serotonin antagonist)"],
+            "supportive_care": "Benzodiazepines, aggressive cooling, neuromuscular paralysis if needed for severe cases, ICU monitoring"
+        },
+        {
+            "name": "Sedative-Hypnotic/Opioid Syndrome",
+            "description": "Central nervous system depression from sedatives or opioids",
+            "common_agents": [
+                "Opioids (eg. fentanyl and analogues, heroin, morphine, oxycodone, hydromorphone, Diphenoxylate, Tramadol)",
+                "Benzodiazepines",
+                "Barbiturates",
+                "Gamma-hydroxybutyrate (GHB)",
+                "Gabapentin and pregabalin",
+                "Carisoprodol",
+                "Meprobamate",
+                "Ethanol",
+                "Z-drugs (zolpidem, eszopiclone)"
+            ],
+            "mental_status": ["Sedation", "Confusion", "Stupor", "Coma"],
+            "vital_signs": {
+                "temperature": "Decreased or normal",
+                "heart_rate": "Decreased or normal", 
+                "respiratory_rate": "Decreased (especially opioids)",
+                "blood_pressure": "Decreased or normal"
+            },
+            "pupils": {"size": "Constricted (pinpoint with opioids)", "reactivity": "Sluggish to light"},
+            "skin": {"moisture": "Normal to slightly moist", "temperature": "Cool", "color": "Pale or cyanotic"},
+            "other_features": [
+                "Respiratory depression (especially opioids)",
+                "Hyporeflexia",
+                "Bradycardia",
+                "Track marks (injection drug use)",
+                "Miosis (pinpoint pupils)"
+            ],
+            "treatment_priorities": ["Airway management", "Respiratory support", "Reverse with naloxone (opioids)", "Flumazenil (benzodiazepines - use cautiously)"],
+            "specific_antidotes": ["Naloxone (for opioids)", "Flumazenil (for benzodiazepines - rarely used due to seizure risk)"],
+            "supportive_care": "Oxygen, ventilatory support, fluids, airway protection, continuous monitoring"
+        },
+        {
+            "name": "Cholinergic Syndrome",
+            "description": "Excessive acetylcholine activity - common with organophosphate/carbamate poisoning",
+            "common_agents": [
+                "Organophosphate pesticides (eg. malathion, parathion)",
+                "Carbamate pesticides",
+                "Nerve agents (sarin, soman, tabun, VX)",
+                "Nicotine",
+                "Physostigmine",
+                "Pilocarpine",
+                "Mushrooms (some species)"
+            ],
+            "mental_status": ["Confusion", "Agitation", "Seizures", "Coma (in severe cases)"],
+            "vital_signs": {
+                "temperature": "Normal",
+                "heart_rate": "Decreased or increased",
+                "respiratory_rate": "Decreased (bronchospasm, secretions)",
+                "blood_pressure": "Decreased or increased"
+            },
+            "pupils": {"size": "Constricted (miosis)", "reactivity": "Sluggish"},
+            "skin": {"moisture": "Diaphoresis (excessive sweating)", "temperature": "Normal to cool", "color": "Pale"},
+            "other_features": [
+                "SLUDGE syndrome: Salivation, Lacrimation, Urination, Defecation, GI upset, Emesis",
+                "DUMBELS: Defecation, Urination, Miosis, Bronchospasm/Bronchorrhea, Emesis, Lacrimation, Salivation",
+                "Fasciculations (muscle twitching)",
+                "Weakness",
+                "Paralysis (severe cases)",
+                "Wheezing",
+                "Bradycardia or tachycardia"
+            ],
+            "treatment_priorities": ["Decontamination (remove contaminated clothing)", "Airway management", "Atropine administration", "Pralidoxime (2-PAM)"],
+            "specific_antidotes": ["Atropine (repeated doses)", "Pralidoxime (2-PAM for organophosphates)"],
+            "supportive_care": "Aggressive atropinization, airway suctioning, ventilatory support, benzodiazepines for seizures, decontamination"
+        }
+    ]
+    
+    for syndrome_data in syndromes_data:
+        existing = db.query(PoisonSyndrome).filter(
+            PoisonSyndrome.name == syndrome_data["name"]
+        ).first()
+        if not existing:
+            syndrome = PoisonSyndrome(**syndrome_data)
+            db.add(syndrome)
+    
+    db.commit()
+    print("✅ Seeded poison syndromes (toxidromes)")
+
+def seed_toxicology_labs(db: Session):
+    """Seed toxicology laboratories with testing capabilities"""
+    labs_data = [
+        {
+            "name": "National Forensic Science Laboratory",
+            "lab_type": "forensic",
+            "phone": "+977-1-4411841",
+            "email": "nfsl@nepal.gov.np",
+            "address": "Khumaltar",
+            "city": "Lalitpur",
+            "state": "Bagmati",
+            "country": "Nepal",
+            "latitude": 27.6566,
+            "longitude": 85.3262,
+            "tests_available": [
+                "Blood Toxicology Screen",
+                "Urine Drug Screen",
+                "Heavy Metal Analysis",
+                "Pesticide Detection",
+                "Alcohol Level",
+                "Drug Quantification"
+            ],
+            "turnaround_time": "3-5 days",
+            "is_24_hours": False,
+            "is_accredited": True,
+            "is_active": True
+        },
+        {
+            "name": "TUTH Clinical Biochemistry Lab",
+            "lab_type": "clinical",
+            "phone": "+977-1-4412505",
+            "email": "biochem@tuth.edu.np",
+            "address": "Tribhuvan University Teaching Hospital, Maharajgunj",
+            "city": "Kathmandu",
+            "state": "Bagmati",
+            "country": "Nepal",
+            "latitude": 27.7356,
+            "longitude": 85.3318,
+            "tests_available": [
+                "Paracetamol Level",
+                "Salicylate Level",
+                "Carboxyhemoglobin",
+                "Methemoglobin",
+                "Cholinesterase Level",
+                "Digoxin Level",
+                "Lithium Level",
+                "Theophylline Level"
+            ],
+            "turnaround_time": "2-4 hours (urgent), 1 day (routine)",
+            "is_24_hours": True,
+            "is_accredited": True,
+            "is_active": True
+        },
+        {
+            "name": "Patan Hospital Toxicology Lab",
+            "lab_type": "clinical",
+            "phone": "+977-1-5522295",
+            "email": "lab@patanhospital.org.np",
+            "address": "Lagankhel, Patan",
+            "city": "Lalitpur",
+            "state": "Bagmati",
+            "country": "Nepal",
+            "latitude": 27.6682,
+            "longitude": 85.3188,
+            "tests_available": [
+                "Blood Toxicology Screen",
+                "Urine Drug Screen",
+                "Acetaminophen Level",
+                "Alcohol Level",
+                "Carbon Monoxide",
+                "Basic Drug Screen"
+            ],
+            "turnaround_time": "1-3 hours (urgent)",
+            "is_24_hours": True,
+            "is_accredited": True,
+            "is_active": True
+        },
+        {
+            "name": "Nepal Police Hospital Forensic Lab",
+            "lab_type": "forensic",
+            "phone": "+977-1-4412780",
+            "email": "forensic@nepalpolice.gov.np",
+            "address": "Maharajgunj",
+            "city": "Kathmandu",
+            "state": "Bagmati",
+            "country": "Nepal",
+            "latitude": 27.7380,
+            "longitude": 85.3290,
+            "tests_available": [
+                "Comprehensive Toxicology",
+                "Heavy Metals",
+                "Pesticides",
+                "Drug Analysis",
+                "Alcohol/BAC",
+                "Post-mortem Toxicology"
+            ],
+            "turnaround_time": "5-7 days",
+            "is_24_hours": False,
+            "is_accredited": True,
+            "is_active": True
+        },
+        {
+            "name": "BPKIHS Clinical Laboratory",
+            "lab_type": "clinical",
+            "phone": "+977-25-525555",
+            "email": "clinlab@bpkihs.edu",
+            "address": "B.P. Koirala Institute of Health Sciences, Dharan",
+            "city": "Dharan",
+            "state": "Province 1",
+            "country": "Nepal",
+            "latitude": 26.8127,
+            "longitude": 87.2832,
+            "tests_available": [
+                "Drug Screen",
+                "Paracetamol Level",
+                "Organophosphate Screen",
+                "Heavy Metal Screen",
+                "Alcohol Level"
+            ],
+            "turnaround_time": "3-6 hours",
+            "is_24_hours": True,
+            "is_accredited": True,
+            "is_active": True
+        },
+        {
+            "name": "Nepal Mediciti Toxicology Unit",
+            "lab_type": "clinical",
+            "phone": "+977-1-4217766",
+            "email": "lab@nepalmediciti.com",
+            "address": "Nakhkhu, Bhaisepati",
+            "city": "Lalitpur",
+            "state": "Bagmati",
+            "country": "Nepal",
+            "latitude": 27.6528,
+            "longitude": 85.3240,
+            "tests_available": [
+                "Comprehensive Drug Panel",
+                "Therapeutic Drug Monitoring",
+                "Toxicology Screen",
+                "Heavy Metals Panel",
+                "Pesticide Screen",
+                "Alcohol Level"
+            ],
+            "turnaround_time": "2-4 hours",
+            "is_24_hours": True,
+            "is_accredited": True,
+            "is_active": True
+        },
+        {
+            "name": "Grande Hospital Laboratory",
+            "lab_type": "clinical",
+            "phone": "+977-1-5159266",
+            "email": "lab@grandehospital.com",
+            "address": "Tokha Road, Dhapasi",
+            "city": "Kathmandu",
+            "state": "Bagmati",
+            "country": "Nepal",
+            "latitude": 27.7408,
+            "longitude": 85.3248,
+            "tests_available": [
+                "Blood Toxicology",
+                "Urine Drug Screen",
+                "Paracetamol/Salicylate",
+                "Drug Levels",
+                "Carbon Monoxide"
+            ],
+            "turnaround_time": "2-3 hours",
+            "is_24_hours": True,
+            "is_accredited": True,
+            "is_active": True
+        },
+        {
+            "name": "Bir Hospital Emergency Lab",
+            "lab_type": "clinical",
+            "phone": "+977-1-4221119",
+            "email": "emergencylab@birhospital.gov.np",
+            "address": "Kanti Path, Ratna Park",
+            "city": "Kathmandu",
+            "state": "Bagmati",
+            "country": "Nepal",
+            "latitude": 27.7050,
+            "longitude": 85.3140,
+            "tests_available": [
+                "Basic Toxicology Screen",
+                "Drug of Abuse Screen",
+                "Acetaminophen Level",
+                "Alcohol Level"
+            ],
+            "turnaround_time": "1-2 hours",
+            "is_24_hours": True,
+            "is_accredited": False,
+            "is_active": True
+        }
+    ]
+    
+    for lab_data in labs_data:
+        existing = db.query(ToxicologyLab).filter(
+            ToxicologyLab.name == lab_data["name"]
+        ).first()
+        if not existing:
+            lab = ToxicologyLab(**lab_data)
+            db.add(lab)
+    
+    db.commit()
+    print(f"✅ Seeded {len(labs_data)} toxicology labs")
+
+def seed_blog_articles(db: Session, admin_user: User):
+    """Seed initial blog articles"""
+    articles_data = [
+        {
+            "title": "Carbon Monoxide: What You Need to Know",
+            "category": "Prevention",
+            "description": "It's not an intriguing or novel hazard, just the persistent, invisible killer: carbon monoxide. Learn how to detect and prevent this silent danger in your home.",
+            "content": """Carbon monoxide gas is produced when ordinary fuels burn, for example gasoline, kerosene, wood, propane, and natural gas. Carbon monoxide gives no hint of its presence; it is colorless and odorless. When you breathe it in, carbon monoxide prevents your blood cells from carrying enough oxygen. The brain and heart suffer quickly, but all body organs are harmed by lack of oxygen. High levels of carbon monoxide can kill quickly, but even low levels can have long-lasting effects. Permanent brain damage can result.
+
+How to Eliminate Carbon Monoxide from Your Home:
+• Have every appliance that burns gas, wood, or kerosene inspected. This includes furnaces, ovens and stoves, water heaters, clothes dryers, fireplaces, wood-burning stoves, and space heaters.
+• Don't use gasoline-powered tools and engines indoors.
+• Make sure exhaust fumes from generators cannot enter your home.
+• Never leave a car running in an attached garage - even if the garage door is open.
+• Clear snow from around vents and pipes such as clothes dryer vents and car exhaust pipes.
+• Do not try to heat your home by turning on a gas oven.
+• Never burn charcoal and never use portable fuel-burning camping equipment inside a home, garage, vehicle, or tent.
+
+How to Detect Carbon Monoxide:
+• Install a carbon monoxide alarm in the hallway near every sleeping area in the home. Follow installation instructions, but usually carbon monoxide alarms should be placed on the wall about five feet above the ground.
+• Check the battery at least twice a year, when you check your smoke alarm battery.
+• If the alarm sounds, leave the home immediately and call your local fire department.
+
+You Should Suspect Carbon Monoxide Poisoning When:
+• Headaches, nausea, and/or flu-like symptoms clear up when you go outdoors.
+• Several people develop symptoms of headache, nausea, and fatigue or drowsiness at the same time. (Children and pets are often affected first.)
+
+If You Suspect Carbon Monoxide Poisoning:
+1. Get to fresh air immediately
+2. Call 102 or your local emergency number
+3. Do not re-enter the building until it's been checked by professionals
+
+Installing a CO detector is one of the most important steps you can take to protect your family. Modern detectors are affordable and can be purchased at any hardware store.""",
+            "featured_image": "https://www.poison.org/_next/image?url=%2Fimages%2Fstatic%3Furl%3D%252F750x563%252F3918838573%252Fcarbon-monoxide-poisoning-1.jpg&w=1920&q=70",
+            "read_time": "6 min read",
+            "featured": True
+        },
+        {
+            "title": "Dangers Associated with E-Cigarettes",
+            "category": "Safety Tips",
+            "description": "Electronic cigarettes contain concentrated nicotine liquid that is very poisonous if swallowed. Learn about the dangers and how to keep your family safe.",
+            "content": """Electronic cigarettes are designed to look like real cigarettes. A tiny heating element inside the e-Cig turns a small container of liquid into a vapor. The vapor is then inhaled by the user.
+
+This liquid is often called "e-liquid" or "smoke juice". It may be flavored to smell and taste like mint, chocolate, coffee, or various fruits. The active ingredient in "smoke juice" and electronic cigarettes is nicotine - very concentrated nicotine. Even a small taste of this liquid can cause nicotine poisoning in a child.
+
+Nicotine Poisoning Symptoms:
+Nicotine is the poisonous chemical found in the tobacco plant. Nicotine poisoning often causes nausea, vomiting, dizziness, tremors (shakiness), and sweating, and can make the heart beat much faster than normal. Severe poisoning can cause seizures. It can even cause death. Seizures can begin only 20-30 minutes after swallowing products containing nicotine.
+
+Safety Tips:
+• Always keep children away from ANY product that contains nicotine, especially the concentrated nicotine liquid used in electronic cigarettes.
+• Avoid keeping any product containing liquid nicotine or "smoke juice" in a household where children live or are likely to visit.
+• Always store the product in its original container.
+• Lock these products safely out of sight and reach of children and pets. (That includes "smoke juice", cigarettes, cigars, pipe tobacco, and chewing tobacco – and dirty ashtrays.)
+• Remember that used "smoke juice" containers may still contain nicotine. Wrap them up so kids and pets can't dig them out of the trash.
+
+Statistics and Trends:
+About 20 percent of U.S. adult smokers have used electronic cigarettes. Middle-school students are using e-Cigs at double the rate of a few years ago. About 10 percent of high school students admit to smoking electronic cigarettes.
+
+The rising popularity of e-cigarettes among young people is a growing concern for public health officials. The flavored liquids are particularly attractive to children and teens, increasing the risk of accidental poisoning.
+
+Emergency Response:
+If you suspect that your child has swallowed any nicotine-containing product, or you've splashed it in the eye or on the skin, call your poison center immediately. Expert guidance is always free, confidential, and available 24 hours a day.""",
+            "featured_image": "https://www.poison.org/_next/image?url=%2Fimages%2Fstatic%3Furl%3D%252F2119x1415%252F6f76dfbd79%252Fe-cigs.jpg&w=1920&q=70",
+            "read_time": "7 min read",
+            "featured": False
+        },
+        {
+            "title": "World Directory of Poisons Centres - Global Data",
+            "category": "Research",
+            "description": "As of January 2023, only 47% of WHO Member States had a poisons centre. Learn about global poison control systems and their critical role in public health.",
+            "content": """A poisons centre is a specialized unit that advises on, and assists with, the prevention, diagnosis and management of poisoning. The structure and function of poisons centres varies around the world, however, at a minimum a poisons centre is an information service. Some poisons centres may also include a toxicology laboratory and/or a clinical treatment unit.
+
+Global Status:
+The first poisons information centre started in 1949 in the Netherlands. In the following decades there was an expansion in the number of poisons centres in industrialized countries in the Americas, Europe and Australasia. This was driven by the rapid increase in the development of new drugs and chemical products after the Second World War, and an associated increase in the incidence of poisoning.
+
+As of February 2023, only 47% of WHO Member States had a poisons centre, with the most notable gaps being in the African, Eastern Mediterranean and Western Pacific regions.
+
+Roles of Poisons Centres:
+In addition to providing emergency advice on the management of poisoning cases, poisons centres compile data on toxic exposures and on toxic substances. They have important roles in chemical safety and public health, which include:
+• Characterizing the epidemiology of poisoning to prioritize preventive efforts
+• Advising on the management of the health impacts of chemical incidents
+• Surveillance of chemical exposures
+• Acting as sentinels to detect chemical release
+• Contributing to national capacities for implementation of the International Health Regulations (2005)
+
+Unintentional Poisoning Data:
+Measuring how many people die each year from unintentional poisonings provides an indication of the extent of inadequate management of hazardous chemicals and pollution, and of the effectiveness of a country's health system.
+
+High-income countries have systems in place for collecting information on causes of death in the population. Many low- and middle-income countries do not have such systems, and the numbers of deaths from specific causes have to be estimated from incomplete data.
+
+Global Coordination:
+WHO works with Member States to strengthen poison control capacities through:
+• Technical guidance and standards development
+• Training programs for poison centre staff
+• Support for establishing new poison centres
+• Network building and information sharing
+• Research on poisoning epidemiology
+
+The goal is to ensure that all countries have access to reliable poison information services to reduce preventable deaths and disabilities from poisoning.""",
+            "featured_image": "/images/who-research.jpg",
+            "read_time": "8 min read",
+            "featured": False
+        }
+    ]
+    
+    from datetime import datetime, timezone
+    
+    for article_data in articles_data:
+        # Check if article already exists by title
+        existing = db.query(BlogSubmission).filter(
+            BlogSubmission.title == article_data["title"]
+        ).first()
+        
+        if not existing:
+            article = BlogSubmission(
+                title=article_data["title"],
+                category=article_data["category"],
+                description=article_data["description"],
+                content=article_data["content"],
+                featured_image=article_data["featured_image"],
+                author_id=admin_user.id,
+                author_name="PoisonSense AI Team",
+                author_email=admin_user.email,
+                is_original=True,
+                read_time=article_data["read_time"],
+                status="approved",
+                reviewed_by=admin_user.id,
+                reviewed_at=datetime.now(timezone.utc),
+                published_at=datetime.now(timezone.utc),
+                view_count=0
+            )
+            db.add(article)
+    
+    db.commit()
+    print(f"✅ Seeded {len(articles_data)} blog articles")
+
 def init_database():
     """Initialize database with tables and seed data"""
     print("\n🚀 Initializing PoisonSense-AI Database...\n")
@@ -724,12 +1290,15 @@ def init_database():
     
     try:
         # Seed data
-        seed_admin_user(db)
+        admin_user = seed_admin_user(db)
         seed_poison_centers(db)
         seed_hospitals(db)
         seed_poisons(db)
         seed_antidote_inventory(db)
         seed_ai_model_version(db)
+        seed_poison_syndromes(db)
+        seed_toxicology_labs(db)
+        seed_blog_articles(db, admin_user)
         
         print("\n✅ Database initialization complete!")
         print("=" * 50)

@@ -1,0 +1,777 @@
+import React, { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import "../styles/BlogDetail.css";
+
+const BlogDetail = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [article, setArticle] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch article from API
+  useEffect(() => {
+    const fetchArticle = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/v1/blog/articles/${id}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          // Map API fields to component expected fields
+          const mappedArticle = {
+            ...data,
+            author: data.author_name,
+            date: new Date(data.published_at).toLocaleDateString('en-US', {
+              month: 'long',
+              year: 'numeric'
+            }),
+            readTime: data.read_time || '5 min read',
+            image: data.featured_image || '/images/default-article.jpg',
+            inlineImage: data.featured_image || '/images/default-article.jpg'
+          };
+          setArticle(mappedArticle);
+        } else if (response.status === 404) {
+          setError("Article not found");
+        } else {
+          setError("Failed to load article");
+        }
+      } catch (err) {
+        console.error("Error fetching article:", err);
+        setError("Failed to load article");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArticle();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div className="blog-detail-container" style={{textAlign: 'center', padding: '100px 20px'}}>
+          <p>Loading article...</p>
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
+  if (error || !article) {
+    return (
+      <>
+        <Navbar />
+        <div className="blog-detail-container">
+          <div className="article-not-found">
+            <h2>Article Not Found</h2>
+            <p>{error || "Sorry, the article you're looking for doesn't exist."}</p>
+            <Link to="/blog" className="btn btn-primary">
+              Back to Blog
+            </Link>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Navbar />
+      <div className="blog-detail-container">
+        <div className="blog-detail-header">
+          <button className="back-button" onClick={() => navigate(-1)}>
+            ← Back
+          </button>
+          <div className="article-badges">
+            <span className="badge">{article.category}</span>
+            {article.featured && (
+              <span className="badge featured-badge">⭐ Featured</span>
+            )}
+          </div>
+        </div>
+
+        <article className="blog-detail-article">
+          <div className="article-hero">
+            <img src={article.image} alt={article.title} />
+          </div>
+
+          <div className="article-content-wrapper">
+            <div className="article-meta-header">
+              <h1>{article.title}</h1>
+
+              <div className="article-meta-info">
+                <div className="author-info">
+                  <img
+                    src="/images/default-avatar.jpg"
+                    alt={article.author}
+                    className="author-avatar"
+                  />
+                  <div className="author-details">
+                    <p className="author-name">{article.author}</p>
+                    <p className="article-meta-text">
+    description:
+      "It's not an intriguing or novel hazard, just the persistent, invisible killer: carbon monoxide. Learn how to detect and prevent this silent danger in your home.",
+    content: `Carbon monoxide gas is produced when ordinary fuels burn, for example gasoline, kerosene, wood, propane, and natural gas. Carbon monoxide gives no hint of its presence; it is colorless and odorless. When you breathe it in, carbon monoxide prevents your blood cells from carrying enough oxygen. The brain and heart suffer quickly, but all body organs are harmed by lack of oxygen. High levels of carbon monoxide can kill quickly, but even low levels can have long-lasting effects. Permanent brain damage can result.
+
+How to Eliminate Carbon Monoxide from Your Home:
+• Have every appliance that burns gas, wood, or kerosene inspected. This includes furnaces, ovens and stoves, water heaters, clothes dryers, fireplaces, wood-burning stoves, and space heaters.
+• Don't use gasoline-powered tools and engines indoors.
+• Make sure exhaust fumes from generators cannot enter your home.
+• Never leave a car running in an attached garage - even if the garage door is open.
+• Clear snow from around vents and pipes such as clothes dryer vents and car exhaust pipes.
+• Do not try to heat your home by turning on a gas oven.
+• Never burn charcoal and never use portable fuel-burning camping equipment inside a home, garage, vehicle, or tent.
+
+How to Detect Carbon Monoxide:
+• Install a carbon monoxide alarm in the hallway near every sleeping area in the home. Follow installation instructions, but usually carbon monoxide alarms should be placed on the wall about five feet above the ground.
+• Check the battery at least twice a year, when you check your smoke alarm battery.
+• If the alarm sounds, leave the home immediately and call your local fire department.
+
+You Should Suspect Carbon Monoxide Poisoning When:
+• Headaches, nausea, and/or flu-like symptoms clear up when you go outdoors.
+• Several people develop symptoms of headache, nausea, and fatigue or drowsiness at the same time. (Children and pets are often affected first.)
+
+If You Suspect Carbon Monoxide Poisoning:
+1. Get to fresh air immediately
+2. Call 102 or your local emergency number
+3. Do not re-enter the building until it's been checked by professionals
+
+Installing a CO detector is one of the most important steps you can take to protect your family. Modern detectors are affordable and can be purchased at any hardware store.`,
+    source: "Poison.org",
+    externalUrl: "https://www.poison.org/articles/carbon-monoxide"
+  },
+  {
+    id: 2,
+    title: "Dangers Associated with E-Cigarettes",
+    category: "Safety Tips",
+    author: "Robert Porter, BS, MPH, PharmD - Certified Specialist in Poison Information",
+    date: "January 2024",
+    readTime: "7 min read",
+    featured: false,
+    image: "https://www.poison.org/_next/image?url=%2Fimages%2Fstatic%3Furl%3D%252F2119x1415%252F6f76dfbd79%252Fe-cigs.jpg&w=1920&q=70",
+    description:
+      "Electronic cigarettes contain concentrated nicotine liquid that is very poisonous if swallowed. Learn about the dangers and how to keep your family safe.",
+    content: `Electronic cigarettes are designed to look like real cigarettes. A tiny heating element inside the e-Cig turns a small container of liquid into a vapor. The vapor is then inhaled by the user.
+
+This liquid is often called "e-liquid" or "smoke juice". It may be flavored to smell and taste like mint, chocolate, coffee, or various fruits. The active ingredient in "smoke juice" and electronic cigarettes is nicotine - very concentrated nicotine. Even a small taste of this liquid can cause nicotine poisoning in a child.
+
+Nicotine Poisoning Symptoms:
+Nicotine is the poisonous chemical found in the tobacco plant. Nicotine poisoning often causes nausea, vomiting, dizziness, tremors (shakiness), and sweating, and can make the heart beat much faster than normal. Severe poisoning can cause seizures. It can even cause death. Seizures can begin only 20-30 minutes after swallowing products containing nicotine.
+
+Safety Tips:
+• Always keep children away from ANY product that contains nicotine, especially the concentrated nicotine liquid used in electronic cigarettes.
+• Avoid keeping any product containing liquid nicotine or "smoke juice" in a household where children live or are likely to visit.
+• Always store the product in its original container.
+• Lock these products safely out of sight and reach of children and pets. (That includes "smoke juice", cigarettes, cigars, pipe tobacco, and chewing tobacco – and dirty ashtrays.)
+• Remember that used "smoke juice" containers may still contain nicotine. Wrap them up so kids and pets can't dig them out of the trash.
+
+Statistics and Trends:
+About 20 percent of U.S. adult smokers have used electronic cigarettes. Middle-school students are using e-Cigs at double the rate of a few years ago. About 10 percent of high school students admit to smoking electronic cigarettes.
+
+The rising popularity of e-cigarettes among young people is a growing concern for public health officials. The flavored liquids are particularly attractive to children and teens, increasing the risk of accidental poisoning.
+
+Emergency Response:
+If you suspect that your child has swallowed any nicotine-containing product, or you've splashed it in the eye or on the skin, call your poison center at 1-800-222-1222 immediately. Expert guidance is always free, confidential, and available 24 hours a day.`,
+    source: "Poison.org",
+    externalUrl: "https://www.poison.org/articles/electronic-cigarettes"
+  },
+  {
+    id: 3,
+    title: "World Directory of Poisons Centres - Global Data",
+    category: "Research",
+    author: "World Health Organization",
+    date: "January 2024",
+    readTime: "8 min read",
+    featured: false,
+    image: "/images/who-research.jpg",
+    description:
+      "As of January 2023, only 47% of WHO Member States had a poisons centre. Learn about global poison control systems and their critical role in public health.",
+    content: `A poisons centre is a specialized unit that advises on, and assists with, the prevention, diagnosis and management of poisoning. The structure and function of poisons centres varies around the world, however, at a minimum a poisons centre is an information service. Some poisons centres may also include a toxicology laboratory and/or a clinical treatment unit.
+
+Global Status:
+The first poisons information centre started in 1949 in the Netherlands. In the following decades there was an expansion in the number of poisons centres in industrialized countries in the Americas, Europe and Australasia. This was driven by the rapid increase in the development of new drugs and chemical products after the Second World War, and an associated increase in the incidence of poisoning.
+
+As of February 2023, only 47% of WHO Member States had a poisons centre, with the most notable gaps being in the African, Eastern Mediterranean and Western Pacific regions.
+
+Roles of Poisons Centres:
+In addition to providing emergency advice on the management of poisoning cases, poisons centres compile data on toxic exposures and on toxic substances. They have important roles in chemical safety and public health, which include:
+• Characterizing the epidemiology of poisoning to prioritize preventive efforts
+• Advising on the management of the health impacts of chemical incidents
+• Surveillance of chemical exposures
+• Acting as sentinels to detect chemical release
+• Contributing to national capacities for implementation of the International Health Regulations (2005)
+
+Unintentional Poisoning Data:
+Measuring how many people die each year from unintentional poisonings provides an indication of the extent of inadequate management of hazardous chemicals and pollution, and of the effectiveness of a country's health system.
+
+High-income countries have systems in place for collecting information on causes of death in the population. Many low- and middle-income countries do not have such systems, and the numbers of deaths from specific causes have to be estimated from incomplete data.
+
+Key Areas for Improvement:
+1. Expanding poison control infrastructure in developing countries
+2. Training healthcare workers in toxicology
+3. Ensuring antidote availability and accessibility
+4. Public awareness campaigns
+5. Standardization of emergency response protocols
+
+Access to Poison Control Services:
+In countries with established poison control systems, the impact is significant:
+- Rapid triage and assessment of poisoned patients
+- Reduced hospital admission rates
+- Faster treatment initiation
+- Lower mortality rates
+- Reduced long-term complications
+
+The WHO is working to support countries in developing these critical services through technical assistance, training programs, and resource allocation.`,
+    source: "WHO - Global Health Observatory",
+    externalUrl: "https://www.who.int/data/gho/data/themes/topics/indicator-groups/poison-control-and-unintentional-poisoning"
+  },
+  {
+    id: 4,
+    title: "First Aid for Chemical Burns: What You Need to Know",
+    category: "First Aid",
+    author: "Dr. Michael Chen",
+    date: "January 15, 2024",
+    readTime: "6 min read",
+    featured: false,
+    image: "/images/chemical-burns.jpg",
+    description:
+      "Essential steps to take when someone experiences a chemical burn, including immediate treatment and medical care.",
+    content: `Chemical burns require immediate and careful treatment. Unlike thermal burns, chemical burns can continue causing damage as long as the chemical is in contact with skin. Quick action can prevent serious complications.
+
+Immediate steps:
+1. Remove the source of the chemical
+2. Rinse with copious amounts of water (15-20+ minutes)
+3. Remove contaminated clothing
+4. Apply cool (not cold) water continuously
+5. Call emergency services immediately
+6. Bring the chemical container to the hospital if possible
+
+Don't use neutralizing agents unless instructed by poison control.
+
+Detailed Treatment Protocol:
+
+INITIAL RESPONSE (First 5 Minutes):
+- Ensure your safety first - use appropriate PPE if available
+- Remove the victim from the chemical source
+- Call emergency services (102)
+- Begin water irrigation immediately
+
+WATER IRRIGATION:
+- Use copious amounts of water
+- Continue for at least 15-20 minutes for mild burns
+- Continue for 30+ minutes for severe burns
+- Water temperature should be cool (not cold)
+- Direct water away from other body parts
+
+REMOVAL OF CONTAMINATED CLOTHING:
+- Carefully remove any clothing contaminated with the chemical
+- Do not pull contaminated fabric over the face
+- Cut clothing away if necessary to avoid spreading chemical
+- Be careful not to touch contaminated areas with bare hands
+
+TRANSPORT TO HOSPITAL:
+- Keep the affected area wet during transport
+- Bring the chemical container or Safety Data Sheet (SDS) with you
+- Keep the victim calm and reassured
+- Monitor for signs of shock
+
+Common Chemical Burns and Special Considerations:
+
+ACID BURNS:
+- Flush with large amounts of water
+- Do not use baking soda or other neutralizers
+- Transport to hospital immediately
+
+ALKALI BURNS:
+- These are often more severe than acid burns
+- Flush with water for longer periods (30+ minutes)
+- More likely to cause deep tissue damage
+
+PHOSPHORUS BURNS:
+- Keep affected area wet
+- Remove phosphorus particles carefully
+- Continue water irrigation`,
+    source: "Emergency Medical Foundation",
+  },
+  {
+    id: 4,
+    title: "Pesticide Poisoning: Recognition and Treatment",
+    category: "Prevention",
+    author: "Dr. Sarah Williams",
+    date: "January 10, 2024",
+    readTime: "5 min read",
+    featured: false,
+    image: "/images/pesticide-safety.jpg",
+    description:
+      "Understanding pesticide exposure risks and emergency response procedures for agricultural and household pesticide poisoning.",
+    content: `Pesticides are used worldwide for agriculture and pest control, but accidental exposure poses serious health risks.
+
+Types of Pesticide Exposure:
+- Skin contact
+- Ingestion
+- Inhalation
+- Eye contact
+
+Symptoms of Pesticide Poisoning:
+- Excessive salivation and sweating
+- Muscle twitching and weakness
+- Difficulty breathing
+- Nausea and vomiting
+- Pinpoint pupils
+- Unconsciousness
+
+Emergency Response:
+1. Remove person from contaminated area
+2. Remove contaminated clothing
+3. Wash skin thoroughly with soap and water
+4. Call poison control immediately
+5. Get emergency medical help
+6. Keep pesticide container for identification
+
+Detailed Information:
+
+PESTICIDE CLASSIFICATION:
+
+Organophosphates:
+- Widely used in agriculture
+- Block acetylcholinesterase enzyme
+- Can be rapidly absorbed through skin
+- Symptoms appear quickly (minutes to hours)
+- Potentially fatal if untreated
+
+Pyrethroids:
+- Synthetic pesticides based on natural pyrethrins
+- Generally less toxic than organophosphates
+- Can cause neurological symptoms
+- Accumulate in fatty tissues
+
+Herbicides:
+- Used for weed control
+- Variable toxicity depending on type
+- Can cause gastrointestinal symptoms
+- Some cause long-term health effects
+
+PREVENTION MEASURES:
+
+For Agricultural Workers:
+- Wear appropriate protective equipment (PPE)
+- Use long-sleeved shirts and pants
+- Wear gloves and respirators when specified
+- Wash hands before eating or touching face
+- Change clothes after pesticide exposure
+- Take breaks in fresh air
+
+For Household Users:
+- Follow label instructions carefully
+- Use only in well-ventilated areas
+- Never eat or drink while applying
+- Store pesticides in original containers
+- Keep away from children and pets
+- Dispose of properly
+
+ANTIDOTE INFORMATION:
+
+Atropine:
+- Primary treatment for organophosphate poisoning
+- Blocks acetylcholine effects
+- Must be given quickly
+- Given by injection by medical professionals
+
+Pralidoxime:
+- Works synergistically with atropine
+- Reactivates acetylcholinesterase
+- More effective if given within 24 hours
+- Used in combination with atropine`,
+    source: "Poison Control Network",
+  },
+  {
+    id: 5,
+    title: "Drug Overdose and Naloxone Administration",
+    category: "First Aid",
+    author: "Dr. James Mitchell",
+    date: "January 5, 2024",
+    readTime: "7 min read",
+    featured: false,
+    image: "/images/naloxone.jpg",
+    description:
+      "Understanding opioid overdose signs and how to use naloxone to reverse effects and save lives.",
+    content: `Opioid overdoses have become a critical public health emergency. Naloxone (Narcan) can reverse opioid effects and save lives when administered quickly.
+
+Opioid Overdose Signs:
+- Unconsciousness
+- Pinpoint pupils
+- Slowed or stopped breathing
+- Unresponsiveness to stimulation
+- Pale, clammy skin
+
+Naloxone Administration:
+1. Call emergency services (102 in India)
+2. If person is unresponsive, administer naloxone
+3. Give rescue breaths if trained
+4. Naloxone works within 2-3 minutes
+5. Monitor until emergency services arrive
+6. May need repeat doses
+
+Naloxone is safe, effective, and readily available at many pharmacies and health centers.
+
+COMPREHENSIVE OVERDOSE RESPONSE GUIDE:
+
+RECOGNITION OF OVERDOSE:
+
+Early Signs:
+- Difficulty staying awake
+- Confusion
+- Slow or shallow breathing
+- Blue lips or fingernails
+
+Late Signs:
+- Unconsciousness
+- Pinpoint pupils (extremely small)
+- Gurgling or snoring sounds
+- Pale or bluish skin
+- No pulse or breathing
+
+IMMEDIATE RESPONSE STEPS:
+
+Step 1: Check Responsiveness
+- Shout the person's name
+- Try to shake their shoulders
+- If unresponsive, proceed to Step 2
+
+Step 2: Call Emergency Services
+- Dial 102 immediately
+- Provide location and details
+- Stay on the line with dispatcher
+- Follow their instructions
+
+Step 3: Administer Naloxone
+- Nasal spray: Insert into nostril, press plunger
+- Intramuscular injection: Inject into outer thigh
+- Intranasal: Spray into one nostril
+- Effects appear in 2-3 minutes
+
+Step 4: Rescue Breathing (if trained)
+- Open airway by tilting head back
+- Pinch nose closed
+- Seal your mouth over theirs
+- Give 2 breaths, pause, repeat
+- If untrained, follow dispatcher guidance
+
+Step 5: Recovery Position
+- If person becomes responsive
+- Roll onto side to prevent aspiration
+- Monitor breathing until help arrives
+- Never leave person alone
+
+NALOXONE INFORMATION:
+
+Types Available:
+- Nasal spray (easiest for public use)
+- Auto-injector (intramuscular)
+- Injectable solution
+
+Dosage:
+- Standard dose: 0.4-2 mg
+- May require repeat doses every 2-3 minutes
+- Multiple doses may be needed
+
+Side Effects:
+- Can precipitate acute withdrawal
+- Agitation and anxiety
+- Body aches
+- Sweating
+- Generally not life-threatening
+
+Important Notes:
+- Naloxone only works on opioids
+- Does not work on other drugs
+- Person may become aggressive when waking
+- Always call emergency services
+- Naloxone is reversible - effects wear off in 30-90 minutes
+- The drug may still be in person's system
+
+PREVENTION STRATEGIES:
+
+Risk Reduction:
+- Know warning signs of overdose
+- Never use alone - have someone present
+- Use only in safe locations
+- Reduce dose if tolerance is low
+- Avoid mixing with other substances
+- Seek treatment for addiction
+
+Community Resources:
+- Naloxone distribution programs
+- Addiction treatment services
+- Support groups
+- Harm reduction programs`,
+    source: "Emergency Medical Services",
+  },
+  {
+    id: 6,
+    title:
+      "Household Cleaning Products: Safe Handling and Poisoning Prevention",
+    category: "Safety Tips",
+    author: "Dr. Lisa Anderson",
+    date: "December 28, 2023",
+    readTime: "5 min read",
+    featured: false,
+    image: "/images/household-products.jpg",
+    description:
+      "Guide to safe handling of household cleaning products and prevention of accidental poisoning.",
+    content: `Household cleaning products are essential but potentially hazardous. Proper handling prevents accidental poisoning.
+
+Common Dangerous Products:
+- Bleach
+- Ammonia-based cleaners
+- Drain cleaners
+- Oven cleaners
+- Disinfectants
+- Paint thinners
+
+Safety Guidelines:
+1. Store in original containers
+2. Keep away from children and pets
+3. Never mix chemicals (especially bleach and ammonia)
+4. Use in well-ventilated areas
+5. Wear gloves and eye protection
+6. Follow label instructions
+7. Keep poison control number accessible
+
+If Ingestion Occurs:
+- Don't induce vomiting
+- Call poison control immediately
+- Have product information ready
+- Monitor for symptoms
+
+DETAILED PRODUCT INFORMATION:
+
+BLEACH (Sodium Hypochlorite):
+Contents:
+- Usually 3-8% sodium hypochlorite
+- Water, dyes, and perfumes
+- May contain surfactants
+
+Hazards:
+- Corrosive to skin and eyes
+- Toxic if ingested
+- Produces toxic chlorine gas if mixed with ammonia or acids
+- Respiratory irritation at high concentrations
+
+Safety:
+- Use in well-ventilated areas
+- Wear gloves and eye protection
+- Never mix with other cleaners
+- Dilute according to instructions
+- Keep away from children and pets
+
+AMMONIA-BASED CLEANERS:
+Contents:
+- 5-10% ammonia
+- Water and surfactants
+- Fragrances and dyes
+
+Hazards:
+- Strong respiratory irritant
+- Can cause chemical burns
+- Produces toxic fumes with bleach
+- Harmful if ingested
+
+Safety:
+- Use with excellent ventilation
+- Wear gloves and eye protection
+- Keep separate from bleach
+- Store in cool, dark place
+
+DRAIN CLEANERS:
+Contents:
+- Sodium hydroxide (lye) or sulfuric acid
+- Water and other chemicals
+
+Hazards:
+- Extremely corrosive
+- Can cause severe burns
+- Produce heat and toxic fumes
+- Most dangerous household product
+
+Safety:
+- Wear protective equipment
+- Never pour water into drain cleaner
+- Use sparingly and as directed
+- Keep away from all people and pets
+- Dispose safely
+
+SAFE STORAGE PRACTICES:
+
+Location:
+- Store in cool, dry place
+- Away from living areas
+- Out of reach of children
+- Separate from foods and medicines
+- Locked cabinet preferred
+
+Original Containers:
+- Never transfer to food or beverage containers
+- Keep labels intact and readable
+- Store tightly closed
+- Check for leaks regularly
+
+Organization:
+- Separate by type (cleaners, disinfectants, etc.)
+- Keep incompatible products separated
+- Label homemade solutions clearly
+- Keep inventory updated
+
+POISON PREVENTION TIPS:
+
+For Families with Children:
+- Use child-resistant containers
+- Store on high shelves
+- Keep out of reach
+- Use safety locks if needed
+- Teach children about dangers
+
+For Elderly or Confused Individuals:
+- Label clearly with large text
+- Keep only necessary products
+- Consider alternative products
+- Store in locked cabinet if needed
+
+NATURAL ALTERNATIVES:
+
+These are less toxic but less effective:
+- Baking soda for scrubbing
+- Vinegar for disinfecting
+- Lemon juice for degreasing
+- Salt for abrasive cleaning
+- Essential oils for fragrance
+
+EMERGENCY RESPONSE:
+
+If Someone Ingests Cleaning Product:
+1. Do NOT induce vomiting
+2. Call poison control: 102
+3. Have product container available
+4. Provide product name and amount
+5. Follow poison control instructions
+6. Keep person calm and comfortable
+
+If Product Contacts Eyes:
+1. Rinse with water for 15+ minutes
+2. Remove contact lenses if present
+3. Call poison control
+4. Seek medical attention
+
+If Inhaled Fumes:
+1. Move to fresh air immediately
+2. Call poison control
+3. Monitor for breathing difficulties
+4. Seek medical help if symptoms worsen`,
+    source: "Consumer Safety Association",
+  },
+];
+
+export default function BlogDetail() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const article = articlesData.find((a) => a.id === parseInt(id));
+
+  if (!article) {
+    return (
+      <>
+        <Navbar />
+        <div className="blog-detail-container">
+          <div className="article-not-found">
+            <h2>Article Not Found</h2>
+            <p>Sorry, the article you're looking for doesn't exist.</p>
+            <Link to="/blog" className="btn btn-primary">
+              Back to Blog
+            </Link>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Navbar />
+      <div className="blog-detail-container">
+        <div className="blog-detail-header">
+          <button className="back-button" onClick={() => navigate(-1)}>
+            ← Back
+          </button>
+          <div className="article-badges">
+            <span className="badge">{article.category}</span>
+            {article.featured && (
+              <span className="badge featured-badge">⭐ Featured</span>
+            )}
+          </div>
+        </div>
+
+        <article className="blog-detail-article">
+          <div className="article-hero">
+            <img src={article.image} alt={article.title} />
+          </div>
+
+          <div className="article-content-wrapper">
+            <div className="article-meta-header">
+              <h1>{article.title}</h1>
+
+              <div className="article-meta-info">
+                <div className="author-info">
+                  <img
+                    src="/images/default-avatar.jpg"
+                    alt={article.author}
+                    className="author-avatar"
+                  />
+                  <div className="author-details">
+                    <p className="author-name">{article.author}</p>
+                    <p className="article-meta-text">
+                      {article.date} • {article.readTime}
+                    </p>
+                  </div>
+                </div>
+                <p className="article-source">Source: {article.source}</p>
+              </div>
+            </div>
+
+            <div className="article-body-content">
+              {article.inlineImage && (
+                <div className="inline-image">
+                  <img src={article.inlineImage} alt="Article illustration" />
+                </div>
+              )}
+              {article.content.split("\n").map(
+                (paragraph, index) =>
+                  paragraph.trim() && (
+                    <p
+                      key={index}
+                      className={
+                        paragraph.endsWith(":") ? "section-header" : ""
+                      }
+                    >
+                      {paragraph}
+                    </p>
+                  ),
+              )}
+            </div>
+
+            <div className="article-footer">
+              <Link to="/blog" className="btn btn-secondary">
+                ← Back to Blog
+              </Link>
+            </div>
+          </div>
+        </article>
+      </div>
+      <Footer />
+    </>
+  );
+}
