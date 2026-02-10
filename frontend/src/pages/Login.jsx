@@ -61,7 +61,7 @@ const validateEmail = (email) => {
   
   return { valid: true, error: null };
 };
-
+// Login page
 export default function Login() {
   const [remember, setRemember] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -243,7 +243,7 @@ export default function Login() {
         </form>
 
         {/* Emergency Box */}
-        <div className="emergency-box">
+        <div className="emergency-box"> 
           <h4>⚠ Emergency Situation?</h4>
           <p>You can access emergency features without logging in.</p>
           <Link to="/findhelp" className="btn-emergency">
