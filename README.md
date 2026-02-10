@@ -143,9 +143,7 @@ python -m uvicorn app.main:app --reload --port 8000
 | Emergency | 112 |
 
 ## 👥 Team
-
-- Built with ❤️ for emergency healthcare
-
-## 📄 License
-
-MIT License
+Madan Pandey(Team Leader)
+Dipesh Kumar Chaudhary
+Utsah Bogati
+Pushpa Basnet
