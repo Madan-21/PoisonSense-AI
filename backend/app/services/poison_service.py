@@ -67,7 +67,7 @@ class PoisonAnalysisService:
         severity = self._determine_severity(poison_db, confidence, request)
         
         # Get first aid and treatment info
-        first_aid = "1. Remove person from exposure source\n2. Do not induce vomiting unless instructed\n3. Call Poison Control: 01-512345\n4. Seek immediate medical attention"
+        first_aid = "1. Remove person from exposure source\n2. Do not induce vomiting unless instructed\n3. Call Poison Control: 01-4412505\n4. Seek immediate medical attention"
         management = additional_info.get("management_protocol", "Seek immediate medical attention")
         antidote_name = additional_info.get("antidote")
         
