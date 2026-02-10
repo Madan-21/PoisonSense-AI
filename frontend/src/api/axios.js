@@ -40,6 +40,7 @@ api.interceptors.response.use(
 
       // ✅ Auto clear token on 401 (but don’t force redirect)
       if (status === 401) {
+<<<<<<< HEAD
         localStorage.removeItem("access_token");
         localStorage.removeItem("user");
 
@@ -51,6 +52,20 @@ api.interceptors.response.use(
           window.location.href = "/";
         }
       }
+=======
+        // Token expired or invalid - only clear storage, don't auto-redirect
+        // Let the auth context handle the redirect
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+      }
+      
+      // Keep the full error response for better error handling
+      return Promise.reject(error);
+    } else if (error.request) {
+      // Network error
+      error.message = 'Network error. Please check your connection.';
+      return Promise.reject(error);
+>>>>>>> main
     }
 
     // ✅ IMPORTANT: don't wrap into new Error()

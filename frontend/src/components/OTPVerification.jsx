@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import { getErrorMessage } from "../utils/errorHandler";
 
 export default function OTPVerification({ email, onVerified, onBack, devModeOTP }) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -98,7 +99,7 @@ export default function OTPVerification({ email, onVerified, onBack, devModeOTP 
         onVerified(response);
       }, 1500);
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || err.message || "Verification failed";
+      const errorMsg = getErrorMessage(err, "Verification failed");
       setError(errorMsg);
       // Clear OTP on error
       setOtp(["", "", "", "", "", ""]);
@@ -132,7 +133,7 @@ export default function OTPVerification({ email, onVerified, onBack, devModeOTP 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to resend code");
+      setError(getErrorMessage(err, "Failed to resend code"));
     } finally {
       setIsLoading(false);
     }

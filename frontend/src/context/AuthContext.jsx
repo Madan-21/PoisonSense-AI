@@ -23,15 +23,26 @@ export const AuthProvider = ({ children }) => {
     const initAuth = async () => {
       try {
         const storedUser = authApi.getStoredUser();
-        if (storedUser && authApi.isAuthenticated()) {
-          // Validate token by fetching current user
-          const currentUser = await authApi.getCurrentUser();
-          setUser(currentUser);
+        const token = localStorage.getItem('access_token');
+        
+        if (storedUser && token) {
+          // Try to validate token by fetching current user
+          try {
+            const currentUser = await authApi.getCurrentUser();
+            setUser(currentUser);
+            // Update stored user in case data changed
+            localStorage.setItem('user', JSON.stringify(currentUser));
+          } catch (err) {
+            // Token is invalid or expired
+            console.log('Token validation failed:', err.message);
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user');
+            setUser(null);
+          }
         }
       } catch (err) {
-        // Token invalid, clear storage
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('user');
+        console.error('Auth initialization error:', err);
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -158,7 +169,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

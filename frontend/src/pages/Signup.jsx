@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import OTPVerification from "../components/OTPVerification";
+import { getErrorMessage } from "../utils/errorHandler";
 
 // Valid TLDs for email validation
 const VALID_TLDS = new Set([
@@ -219,7 +220,7 @@ export default function Signup() {
       }
     } catch (err) {
       // Parse validation errors from backend
-      const errorMsg = err.response?.data?.detail || err.message || "Registration failed. Please try again.";
+      const errorMsg = getErrorMessage(err, "Registration failed. Please try again.");
       if (errorMsg.includes('email') || errorMsg.includes('Email')) {
         setFieldErrors(prev => ({ ...prev, email: errorMsg }));
       } else if (errorMsg.includes('password') || errorMsg.includes('Password')) {
@@ -490,28 +491,6 @@ export default function Signup() {
                 </div>
               </div>
 
-              <div>
-                <label>Poison-related Specialization *</label>
-                <div className="input-box">
-                  <select
-                    name="doctor_specialization"
-                    disabled={!isDoctor}
-                    required={isDoctor}
-                    defaultValue=""
-                  >
-                    <option value="">Select specialization</option>
-                    <option>Clinical Toxicology</option>
-                    <option>Emergency Medicine (Poisoning & Overdose)</option>
-                    <option>Internal Medicine (Toxicology Focus)</option>
-                    <option>Pediatrics (Poisoning Cases)</option>
-                    <option>Pharmacology / Poison Information</option>
-                    <option>ICU / Critical Care (Toxic Exposure)</option>
-                    <option>Occupational & Environmental Medicine</option>
-                    <option>Forensic Medicine (Poisoning/Overdose)</option>
-                    <option>Other (Poison-related)</option>
-                  </select>
-                </div>
-              </div>
             </div>
 
             <div className="input-row">

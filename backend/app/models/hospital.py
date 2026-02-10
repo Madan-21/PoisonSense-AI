@@ -62,16 +62,28 @@ class Hospital(Base):
 
 
 class ToxicologyLab(Base):
-    """Labs within hospitals that can conduct toxicology tests"""
+    """Toxicology labs - both standalone and hospital-based"""
     __tablename__ = "toxicology_labs"
     
     id = Column(Integer, primary_key=True, index=True)
-    hospital_id = Column(Integer, ForeignKey("hospitals.id", ondelete="CASCADE"))
+    hospital_id = Column(Integer, ForeignKey("hospitals.id", ondelete="CASCADE"), nullable=True)  # Optional - for hospital-based labs
     
     name = Column(String(255), nullable=False)
     
+    # Location (for standalone labs)
+    address = Column(Text)
+    city = Column(String(100))
+    state = Column(String(100))
+    country = Column(String(100), default="Nepal")
+    latitude = Column(Float)
+    longitude = Column(Float)
+    
+    # Lab type
+    lab_type = Column(String(50))  # 'clinical', 'forensic', 'research'
+    
     # Tests available - with details
-    tests_available = Column(JSON)  # [{"name": "Blood Toxicology", "price": 1500, "duration": "2 hours"}]
+    tests_available = Column(JSON)  # ["Test name 1", "Test name 2"] or [{"name": "Blood Toxicology", "price": 1500, "duration": "2 hours"}]
+    turnaround_time = Column(String(255))  # "1-3 hours", "24 hours", etc.
     
     # Contact
     phone = Column(String(50))
@@ -81,8 +93,14 @@ class ToxicologyLab(Base):
     operating_hours = Column(Text)
     is_24_hours = Column(Boolean, default=False)
     
+    # Accreditation
+    is_accredited = Column(Boolean, default=False)
+    accreditation_body = Column(String(255))
+    
+    # Status
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationship
+    # Relationship (optional)
     hospital = relationship("Hospital", back_populates="labs")
