@@ -7,197 +7,239 @@ const TermsOfService = () => {
   return (
     <>
       <Navbar />
-      <div className="static-page-container">
-        <div className="static-page-header">
-          <h1>Terms of Service</h1>
-          <p>Last updated: January 28, 2026</p>
-        </div>
 
-        <div className="static-page-content">
-          <section className="policy-section">
-            <h2>1. Acceptance of Terms</h2>
-            <p>
-              By accessing and using PoisonSense AI, you accept and agree to be bound by these
-              Terms of Service. If you do not agree, please do not use our services.
+      <div className="tosp-page">
+        {/* HERO */}
+        <header className="tosp-hero">
+          <div className="tosp-hero-inner">
+            <h1>Terms of Service</h1>
+            <p>Last updated: January 28, 2026</p>
+          </div>
+        </header>
+
+        <main className="tosp-container">
+          {/* 1 */}
+          <section className="tosp-card">
+            <div className="tosp-card-title">
+              <span className="tosp-badge">1</span>
+              <h2>Acceptance of Terms</h2>
+            </div>
+            <p className="tosp-text">
+              By accessing and using PoisonSense AI, you agree to be bound by these Terms of
+              Service. If you do not agree, please do not use our services.
             </p>
           </section>
 
-          <section className="policy-section">
-            <h2>2. Service Description</h2>
-            <p>
+          {/* 2 */}
+          <section className="tosp-card">
+            <div className="tosp-card-title">
+              <span className="tosp-badge">2</span>
+              <h2>Service Description</h2>
+            </div>
+
+            <p className="tosp-text">
               PoisonSense AI provides AI-powered poison identification, emergency guidance, and
-              connections to medical resources. Our services include:
+              access to helpful resources. Our services may include:
             </p>
-            <ul>
-              <li>🤖 Automated symptom analysis</li>
-              <li>🏥 Hospital and poison control center locator</li>
-              <li>💊 Antidote availability information</li>
-              <li>📚 Educational resources and safety tips</li>
-              <li>👨‍⚕️ Doctor verification system</li>
+
+            <ul className="tosp-checklist">
+              <li><span>🤖</span> Symptom analysis and recommendations</li>
+              <li><span>🧠</span> AI-guided poison identification support</li>
+              <li><span>📍</span> Nearest help center locator</li>
+              <li><span>💊</span> Antidote and safety guidance</li>
+              <li><span>📞</span> Emergency contact information</li>
             </ul>
           </section>
 
-          <section className="policy-section warning-section">
-            <h2>⚠️ 3. Medical Disclaimer</h2>
-            <div className="warning-box">
-              <p>
-                <strong>IMPORTANT: This is NOT a substitute for professional medical care.</strong>
+          {/* 3 - Highlight block (privacy-style) */}
+          <section className="tosp-card">
+            <div className="tosp-card-title">
+              <span className="tosp-badge">3</span>
+              <h2>Medical Disclaimer</h2>
+            </div>
+
+            <div className="tosp-highlight">
+              <h3>Important Notice</h3>
+              <p className="tosp-text">
+                PoisonSense AI is for informational support only and does not replace professional
+                medical care. In emergencies, call emergency services (e.g., 102) immediately.
               </p>
-              <p>
-                PoisonSense AI provides informational support only. In case of poisoning
-                or medical emergency:
-              </p>
-              <ol>
-                <li>📞 <strong>Call emergency services (102) immediately</strong></li>
-                <li>🏥 Seek immediate medical attention</li>
-                <li>☎️ Contact your local poison control center</li>
-                <li>👨‍⚕️ Consult with qualified healthcare professionals</li>
-              </ol>
-              <p>
-                Do not rely solely on our AI system for medical decisions. Always verify
-                information with licensed healthcare providers.
-              </p>
+
+              <ul className="tosp-list">
+                <li>Seek urgent medical attention</li>
+                <li>Follow instructions from qualified professionals</li>
+                <li>Do not rely solely on AI for medical decisions</li>
+              </ul>
             </div>
           </section>
 
-          <section className="policy-section">
-            <h2>4. User Responsibilities</h2>
-            <p>As a user, you agree to:</p>
-            <ul>
-              <li>✅ Provide accurate information</li>
-              <li>✅ Use the service for lawful purposes only</li>
-              <li>✅ Maintain confidentiality of your account</li>
-              <li>✅ Not misuse or attempt to hack the system</li>
-              <li>✅ Respect other users' privacy</li>
-              <li>✅ Follow all applicable laws and regulations</li>
+          {/* 4 */}
+          <section className="tosp-card">
+            <div className="tosp-card-title">
+              <span className="tosp-badge">4</span>
+              <h2>User Responsibilities</h2>
+            </div>
+
+            <ul className="tosp-checklist">
+              <li><span>✅</span> Provide accurate information</li>
+              <li><span>✅</span> Use the platform legally and responsibly</li>
+              <li><span>✅</span> Keep your account credentials secure</li>
+              <li><span>✅</span> Avoid misuse, fraud, or harmful behavior</li>
             </ul>
           </section>
 
-          <section className="policy-section">
-            <h2>5. Account Registration</h2>
-            <p>
-              To use certain features, you must create an account. You are responsible for:
-            </p>
-            <ul>
-              <li>Maintaining the security of your password</li>
-              <li>All activities that occur under your account</li>
-              <li>Notifying us of unauthorized access</li>
-              <li>Providing accurate registration information</li>
-            </ul>
-          </section>
+          {/* 5 */}
+          <section className="tosp-card">
+            <div className="tosp-card-title">
+              <span className="tosp-badge">5</span>
+              <h2>Account Registration</h2>
+            </div>
 
-          <section className="policy-section">
-            <h2>6. Intellectual Property</h2>
-            <p>
-              All content, features, and functionality of PoisonSense AI are owned by us and
-              protected by copyright, trademark, and other intellectual property laws.
-            </p>
-            <h3>You May:</h3>
-            <ul>
-              <li>✅ Use the service for personal, non-commercial purposes</li>
-              <li>✅ Share educational content with proper attribution</li>
-            </ul>
-            <h3>You May Not:</h3>
-            <ul>
-              <li>❌ Copy, modify, or distribute our software</li>
-              <li>❌ Reverse engineer our AI algorithms</li>
-              <li>❌ Remove copyright or proprietary notices</li>
-              <li>❌ Use our brand without permission</li>
-            </ul>
-          </section>
-
-          <section className="policy-section">
-            <h2>7. Limitation of Liability</h2>
-            <p>
-              To the fullest extent permitted by law, PoisonSense AI and its affiliates
-              shall not be liable for:
-            </p>
-            <ul>
-              <li>Medical outcomes or treatment decisions</li>
-              <li>Errors or inaccuracies in AI-generated content</li>
-              <li>Service interruptions or technical issues</li>
-              <li>Third-party content or links</li>
-              <li>Data loss or security breaches</li>
-              <li>Indirect, incidental, or consequential damages</li>
-            </ul>
-          </section>
-
-          <section className="policy-section">
-            <h2>8. Disclaimer of Warranties</h2>
-            <p>
-              PoisonSense AI is provided "as is" without warranties of any kind, express or implied,
-              including but not limited to:
-            </p>
-            <ul>
-              <li>Accuracy or completeness of information</li>
-              <li>Uninterrupted or error-free operation</li>
-              <li>Fitness for a particular purpose</li>
-              <li>Non-infringement of third-party rights</li>
-            </ul>
-          </section>
-
-          <section className="policy-section">
-            <h2>9. Emergency Services</h2>
-            <p>
-              PoisonSense AI is not an emergency service provider. We facilitate connections
-              to emergency services but do not replace:
-            </p>
-            <ul>
-              <li>🚑 Emergency medical services (102)</li>
-              <li>☎️ Poison control centers</li>
-              <li>🏥 Hospital emergency departments</li>
-              <li>👨‍⚕️ Licensed medical professionals</li>
-            </ul>
-          </section>
-
-          <section className="policy-section">
-            <h2>10. Data and Privacy</h2>
-            <p>
-              Your use of PoisonSense AI is subject to our Privacy Policy. By using our
-              services, you consent to our data practices as described in the Privacy Policy.
+            <p className="tosp-text">
+              Some features may require registration. You are responsible for safeguarding your
+              login information and for all activities performed through your account.
             </p>
           </section>
 
-          <section className="policy-section">
-            <h2>11. Termination</h2>
-            <p>
-              We reserve the right to suspend or terminate your account if you:
-            </p>
-            <ul>
-              <li>Violate these Terms of Service</li>
-              <li>Engage in fraudulent or illegal activities</li>
-              <li>Misuse the platform or harm other users</li>
-              <li>Provide false information</li>
-            </ul>
-          </section>
+          {/* 6 */}
+          <section className="tosp-card">
+            <div className="tosp-card-title">
+              <span className="tosp-badge">6</span>
+              <h2>Intellectual Property</h2>
+            </div>
 
-          <section className="policy-section">
-            <h2>12. Changes to Terms</h2>
-            <p>
-              We may modify these terms at any time. Continued use of the service after
-              changes constitutes acceptance of the modified terms.
+            <p className="tosp-text">
+              All content and functionality within PoisonSense AI are owned by us or our licensors
+              and are protected by intellectual property laws.
             </p>
-          </section>
 
-          <section className="policy-section">
-            <h2>13. Governing Law</h2>
-            <p>
-              These terms are governed by the laws of Nepal. Any disputes shall be resolved
-              in courts located in Kathmandu, Nepal.
-            </p>
-          </section>
+            <div className="tosp-grid-2">
+              <div className="tosp-subcard">
+                <h3>You May</h3>
+                <ul className="tosp-list">
+                  <li>Use the service for personal use</li>
+                  <li>Share content with proper attribution</li>
+                </ul>
+              </div>
 
-          <section className="policy-section contact-section">
-            <h2>14. Contact Information</h2>
-            <p>For questions about these Terms of Service, contact us at:</p>
-            <div className="contact-info">
-              <p>📧 Email: legal@poisonsense.ai</p>
-              <p>📞 Phone: +977-1-5123456</p>
-              <p>📍 Address: Kathmandu, Nepal</p>
+              <div className="tosp-subcard">
+                <h3>You May Not</h3>
+                <ul className="tosp-list">
+                  <li>Copy, resell, or redistribute the platform</li>
+                  <li>Reverse engineer the AI system</li>
+                  <li>Remove copyrights and trademarks</li>
+                </ul>
+              </div>
             </div>
           </section>
-        </div>
+
+          {/* 7 */}
+          <section className="tosp-card">
+            <div className="tosp-card-title">
+              <span className="tosp-badge">7</span>
+              <h2>Limitation of Liability</h2>
+            </div>
+            <p className="tosp-text">
+              To the fullest extent permitted by law, PoisonSense AI will not be liable for indirect,
+              incidental, or consequential damages resulting from your use of the service.
+            </p>
+          </section>
+
+          {/* 8 */}
+          <section className="tosp-card">
+            <div className="tosp-card-title">
+              <span className="tosp-badge">8</span>
+              <h2>Disclaimer of Warranties</h2>
+            </div>
+            <p className="tosp-text">
+              PoisonSense AI is provided “as is” without warranties of any kind. We do not guarantee
+              uninterrupted service or complete accuracy in all situations.
+            </p>
+          </section>
+
+          {/* 9 */}
+          <section className="tosp-card">
+            <div className="tosp-card-title">
+              <span className="tosp-badge">9</span>
+              <h2>Emergency Services</h2>
+            </div>
+            <p className="tosp-text">
+              PoisonSense AI is not an emergency service provider. We may assist you with information
+              and recommended actions, but response is handled by external medical providers.
+            </p>
+          </section>
+
+          {/* 10 */}
+          <section className="tosp-card">
+            <div className="tosp-card-title">
+              <span className="tosp-badge">10</span>
+              <h2>Data and Privacy</h2>
+            </div>
+            <p className="tosp-text">
+              Use of this service is subject to our Privacy Policy. By using PoisonSense AI, you
+              consent to the practices described there.
+            </p>
+          </section>
+
+          {/* 11 */}
+          <section className="tosp-card">
+            <div className="tosp-card-title">
+              <span className="tosp-badge">11</span>
+              <h2>Termination</h2>
+            </div>
+            <p className="tosp-text">
+              We reserve the right to suspend or terminate access if misuse, abuse, or violations
+              of these terms are detected.
+            </p>
+          </section>
+
+          {/* 12 */}
+          <section className="tosp-card">
+            <div className="tosp-card-title">
+              <span className="tosp-badge">12</span>
+              <h2>Changes to Terms</h2>
+            </div>
+            <p className="tosp-text">
+              We may update these terms periodically. Continued use after changes indicates acceptance.
+            </p>
+          </section>
+
+          {/* Contact */}
+          <section className="tosp-card">
+            <div className="tosp-card-title">
+              <span className="tosp-badge">14</span>
+              <h2>Contact Information</h2>
+            </div>
+
+            <div className="tosp-contact-box">
+              <div className="tosp-contact-item">
+                <span>📧</span>
+                <div>
+                  <strong>Email</strong>
+                  <p>legal@poisonsense.ai</p>
+                </div>
+              </div>
+
+              <div className="tosp-contact-item">
+                <span>📞</span>
+                <div>
+                  <strong>Phone</strong>
+                  <p>+977-1-5123456</p>
+                </div>
+              </div>
+
+              <div className="tosp-contact-item">
+                <span>📍</span>
+                <div>
+                  <strong>Address</strong>
+                  <p>Kathmandu, Nepal</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
       </div>
+
       <Footer />
     </>
   );
