@@ -42,20 +42,22 @@ async def list_toxicology_labs(
     
     # Format dedicated labs
     for lab in labs:
-        hospital = db.query(Hospital).filter(Hospital.id == lab.hospital_id).first()
+        hospital = db.query(Hospital).filter(Hospital.id == lab.hospital_id).first() if lab.hospital_id else None
         result.append({
             "id": lab.id,
             "name": lab.name,
             "type": "dedicated_lab",
             "hospital_name": hospital.name if hospital else None,
             "phone": lab.phone or (hospital.phone if hospital else None),
-            "address": hospital.address if hospital else None,
-            "city": hospital.city if hospital else None,
-            "latitude": hospital.latitude if hospital else None,
-            "longitude": hospital.longitude if hospital else None,
+            "address": lab.address or (hospital.address if hospital else None),
+            "city": lab.city or (hospital.city if hospital else None),
+            "latitude": lab.latitude or (hospital.latitude if hospital else None),
+            "longitude": lab.longitude or (hospital.longitude if hospital else None),
             "tests_available": lab.tests_available or [],
+            "turnaround_time": lab.turnaround_time,
             "operating_hours": lab.operating_hours,
-            "is_24_hours": lab.is_24_hours
+            "is_24_hours": lab.is_24_hours,
+            "is_accredited": lab.is_accredited
         })
     
     # Format hospitals with toxicology
@@ -97,18 +99,63 @@ async def find_nearby_labs(
     db: Session = Depends(get_db)
 ):
     """
-    Find toxicology labs near user location
+    Find toxicology labs near user location (both standalone and hospital-based)
     """
-    service = LocationService(db)
+    from math import radians, sin, cos, sqrt, atan2
     
-    # Get all hospitals with toxicology facilities
+    def calculate_distance(lat1, lon1, lat2, lon2):
+        """Calculate distance using Haversine formula"""
+        R = 6371  # Earth's radius in km
+        dlat = radians(lat2 - lat1)
+        dlon = radians(lon2 - lon1)
+        a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
+        c = 2 * atan2(sqrt(a), sqrt(1-a))
+        return R * c
+    
+    results = []
+    
+    # Get standalone toxicology labs
+    labs = db.query(ToxicologyLab).filter(
+        ToxicologyLab.is_active == True,
+        ToxicologyLab.latitude.isnot(None),
+        ToxicologyLab.longitude.isnot(None)
+    ).all()
+    
+    for lab in labs:
+        # Calculate distance
+        dist = calculate_distance(latitude, longitude, lab.latitude, lab.longitude)
+        
+        if dist <= radius_km:
+            tests = lab.tests_available or []
+            
+            # Filter by test type if specified
+            if test_type:
+                tests = [t for t in tests if test_type.lower() in str(t).lower()]
+                if not tests:
+                    continue
+            
+            results.append({
+                "id": lab.id,
+                "name": lab.name,
+                "type": "dedicated_lab",
+                "phone": lab.phone,
+                "email": lab.email,
+                "address": f"{lab.address}, {lab.city}",
+                "latitude": lab.latitude,
+                "longitude": lab.longitude,
+                "distance_km": round(dist, 2),
+                "tests_available": lab.tests_available or [],
+                "turnaround_time": lab.turnaround_time,
+                "is_24_hours": lab.is_24_hours,
+                "is_accredited": lab.is_accredited
+            })
+    
+    # Also get hospitals with toxicology facilities
     hospitals = db.query(Hospital).filter(
         Hospital.is_active == True,
         Hospital.latitude.isnot(None),
         Hospital.longitude.isnot(None)
     ).all()
-    
-    results = []
     
     for h in hospitals:
         # Check if has toxicology
@@ -120,7 +167,7 @@ async def find_nearby_labs(
             continue
         
         # Calculate distance
-        dist = service._calculate_distance(latitude, longitude, h.latitude, h.longitude)
+        dist = calculate_distance(latitude, longitude, h.latitude, h.longitude)
         
         if dist <= radius_km:
             tests = h.toxicology_tests or _get_standard_tests()
@@ -132,9 +179,9 @@ async def find_nearby_labs(
                     continue
             
             results.append({
-                "id": h.id,
-                "name": h.name,
-                "type": h.hospital_type.value if h.hospital_type else "hospital",
+                "id": f"h{h.id}",
+                "name": f"{h.name} - Toxicology Unit",
+                "type": "hospital_lab",
                 "phone": h.phone,
                 "emergency_phone": h.emergency_phone,
                 "address": f"{h.address}, {h.city}",
@@ -155,8 +202,8 @@ async def find_nearby_labs(
         "labs_found": len(results),
         "labs": results[:20],
         "data_attribution": {
-            "source": "PoisonSense-AI Hospital Network",
-            "disclaimer": "Test availability may vary. Please call ahead."
+            "source": "PoisonSense-AI Toxicology Lab Network",
+            "disclaimer": "Test availability may vary. Please call ahead to confirm."
         }
     }
 

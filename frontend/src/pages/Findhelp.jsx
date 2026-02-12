@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PoisonMap from "../components/PoisonMap";
 import { centerApi } from "../api/centerApi";
+import { getErrorMessage } from "../utils/errorHandler";
 
 export default function FindHelp() {
   const [filterType, setFilterType] = useState("all");
@@ -10,18 +11,36 @@ export default function FindHelp() {
   const [userLocation, setUserLocation] = useState(null);
   const [hospitals, setHospitals] = useState([]);
   const [poisonCenters, setPoisonCenters] = useState([]);
+  const [toxicologyLabs, setToxicologyLabs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [locationStatus, setLocationStatus] = useState("idle"); // idle, loading, granted, denied
+  const [showLocationModal, setShowLocationModal] = useState(true);
 
   // Get user location and fetch nearby resources
   const getLocationAndFetchData = async () => {
     setLocationStatus("loading");
     setError(null);
     
+    // First check for stored location from Home page
+    const storedLocation = localStorage.getItem('userLocation');
+    if (storedLocation) {
+      try {
+        const location = JSON.parse(storedLocation);
+        setUserLocation(location);
+        setLocationStatus("granted");
+        setShowLocationModal(false);
+        await fetchNearbyData(location.latitude, location.longitude);
+        return;
+      } catch (e) {
+        console.log('Error parsing stored location:', e);
+      }
+    }
+    
     if (!navigator.geolocation) {
       setError("Geolocation is not supported by your browser");
       setLocationStatus("denied");
+      setShowLocationModal(false);
       // Fetch all data without location
       fetchAllData();
       return;
@@ -31,12 +50,17 @@ export default function FindHelp() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         setUserLocation({ latitude, longitude });
+        // Store for other pages
+        localStorage.setItem('userLocation', JSON.stringify({ latitude, longitude }));
         setLocationStatus("granted");
+        setShowLocationModal(false);
+        setError(null); // Clear any previous errors
         await fetchNearbyData(latitude, longitude);
       },
       (error) => {
         console.error("Location error:", error);
         setLocationStatus("denied");
+        setShowLocationModal(false);
         setError("Location access denied. Showing all centers.");
         // Fetch all data without location
         fetchAllData();
@@ -49,25 +73,28 @@ export default function FindHelp() {
   const fetchNearbyData = async (latitude, longitude) => {
     setLoading(true);
     try {
-      const [hospitalsRes, centersRes] = await Promise.all([
+      const [hospitalsRes, centersRes, labsRes] = await Promise.all([
         centerApi.getNearbyHospitals(latitude, longitude, { radiusKm: 500, limit: 20 }),
-        centerApi.getNearbyPoisonCenters(latitude, longitude, { radiusKm: 1000, limit: 20 })
+        centerApi.getNearbyPoisonCenters(latitude, longitude, { radiusKm: 1000, limit: 20 }),
+        centerApi.getNearbyLabs(latitude, longitude, 500)
       ]);
       
       const hospitalsData = hospitalsRes.hospitals || hospitalsRes || [];
       const centersData = centersRes.centers || centersRes || [];
+      const labsData = labsRes.labs || labsRes || [];
       
       setHospitals(hospitalsData);
       setPoisonCenters(centersData);
+      setToxicologyLabs(labsData);
       
       // If no nearby results, fetch all
-      if (hospitalsData.length === 0 && centersData.length === 0) {
+      if (hospitalsData.length === 0 && centersData.length === 0 && labsData.length === 0) {
         console.log("No nearby resources, fetching all...");
         await fetchAllData();
       }
     } catch (err) {
       console.error("Error fetching nearby data:", err);
-      setError("Failed to fetch nearby resources. Loading all centers...");
+      setError(getErrorMessage(err, "Failed to fetch nearby resources. Loading all centers..."));
       await fetchAllData();
     } finally {
       setLoading(false);
@@ -78,24 +105,40 @@ export default function FindHelp() {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [hospitalsRes, centersRes] = await Promise.all([
+      const [hospitalsRes, centersRes, labsRes] = await Promise.all([
         centerApi.getAllHospitals(),
-        centerApi.getAllPoisonCenters()
+        centerApi.getAllPoisonCenters(),
+        centerApi.getNearbyLabs(27.7172, 85.3240, 5000) // Default center Nepal, large radius
       ]);
       
       setHospitals(Array.isArray(hospitalsRes) ? hospitalsRes : []);
       setPoisonCenters(Array.isArray(centersRes) ? centersRes : []);
+      setToxicologyLabs(Array.isArray(labsRes.labs || labsRes) ? (labsRes.labs || labsRes) : []);
     } catch (err) {
       console.error("Error fetching all data:", err);
-      setError("Failed to load emergency services. Please check if the backend is running.");
+      setError(getErrorMessage(err, "Failed to load emergency services. Please check if the backend is running."));
     } finally {
       setLoading(false);
     }
   };
 
-  // Auto-load on mount
+  // Auto-load on mount - check for stored location first
   useEffect(() => {
-    getLocationAndFetchData();
+    const storedLocation = localStorage.getItem('userLocation');
+    if (storedLocation) {
+      try {
+        const location = JSON.parse(storedLocation);
+        setUserLocation(location);
+        setLocationStatus("granted");
+        setShowLocationModal(false);
+        setError(null); // Clear any previous errors
+        fetchNearbyData(location.latitude, location.longitude);
+      } catch (e) {
+        console.log('Error parsing stored location:', e);
+        // Keep modal visible for user to grant permission
+      }
+    }
+    // If no stored location, keep modal visible for user to grant permission
   }, []);
 
   // Filter displayed items
@@ -110,57 +153,63 @@ export default function FindHelp() {
       items = [...items, ...hospitals.map(h => ({ ...h, type: "hospital" }))];
     }
     
+    if (filterType === "all" || filterType === "labs") {
+      items = [...items, ...toxicologyLabs.map(l => ({ ...l, type: "lab" }))];
+    }
+    
     return items;
   };
 
   const filteredItems = getFilteredItems();
+  const [selectedItem, setSelectedItem] = useState(null);
 
   return (
     <>
       <Navbar />
 
-      {/* PAGE HEADER */}
-      <section className="find-help-header">
-        <h1>Nearby Emergency Services</h1>
-        <p>Find the closest poison control centers and emergency services</p>
-      </section>
+      {/* Hero Section */}
+      <div className="findhelp-hero">
+        <h1>Find Nearby Help</h1>
+        <p>Locate emergency rooms and poison control centers in your area</p>
+      </div>
 
-      {/* LOCATION CARD */}
-      <section className="location-services-card">
-        <div className="location-card-content">
-          <div className="location-icon">
+      {/* Location Status Card */}
+      <div className="location-status-card">
+        <div className="location-status-content">
+          <div className="status-icon">
             {locationStatus === "loading" ? "⏳" : 
              locationStatus === "granted" ? "✅" : "📍"}
           </div>
-          <div className="location-text">
+          <div className="status-text">
             <h3>
               {locationStatus === "granted" 
                 ? "Location Enabled" 
                 : locationStatus === "loading" 
-                ? "Getting Location..." 
-                : "Enable Location Services"}
+                ? "Detecting Location..." 
+                : "Enable Location Access"}
             </h3>
             <p>
               {locationStatus === "granted" 
-                ? `Showing resources near you (${userLocation?.latitude.toFixed(4)}, ${userLocation?.longitude.toFixed(4)})` 
-                : "Allow us to access your location to find nearby emergency services"}
+                ? `Showing facilities near you` 
+                : "We need your location to find the nearest emergency services"}
             </p>
           </div>
-          <button 
-            className="btn-get-help-nearby" 
-            onClick={getLocationAndFetchData}
-            disabled={loading}
-          >
-            {loading ? "Loading..." : locationStatus === "granted" ? "Refresh" : "Get Help Nearby"}
-          </button>
+          {locationStatus !== "granted" && (
+            <button 
+              className="enable-location-btn" 
+              onClick={getLocationAndFetchData}
+              disabled={loading}
+            >
+              {loading ? "Loading..." : "Enable Location"}
+            </button>
+          )}
         </div>
-        
-        {error && (
-          <div style={{ color: '#dc3545', padding: '10px', textAlign: 'center' }}>
+        {error && locationStatus !== "granted" && (
+          <div className="error-message">
             ⚠️ {error}
           </div>
         )}
-      </section>
+      </div>
 
       {/* FILTERS AND VIEW OPTIONS */}
       <section className="filters-section">
@@ -184,7 +233,7 @@ export default function FindHelp() {
             className={`filter-btn ${filterType === "all" ? "active" : ""}`}
             onClick={() => setFilterType("all")}
           >
-            All ({poisonCenters.length + hospitals.length})
+            All ({poisonCenters.length + hospitals.length + toxicologyLabs.length})
           </button>
           <button
             className={`filter-btn ${filterType === "poison" ? "active" : ""}`}
@@ -198,13 +247,19 @@ export default function FindHelp() {
           >
             🏥 Hospitals ({hospitals.length})
           </button>
+          <button
+            className={`filter-btn ${filterType === "labs" ? "active" : ""}`}
+            onClick={() => setFilterType("labs")}
+          >
+            🧪 Toxicology Labs ({toxicologyLabs.length})
+          </button>
         </div>
       </section>
 
       {/* MAP VIEW - WITH LOCATION PERMISSION REQUEST */}
       {viewType === "map" && (
         <section className="map-view-section">
-          {locationStatus === "idle" || locationStatus === "denied" ? (
+          {showLocationModal && locationStatus !== "granted" ? (
             // Location Permission Request Modal
             <div style={{
               background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
@@ -236,7 +291,7 @@ export default function FindHelp() {
 
               <button
                 onClick={getLocationAndFetchData}
-                disabled={loading}
+                disabled={locationStatus === "loading"}
                 style={{
                   background: "linear-gradient(135deg, #28a745 0%, #1a5f2a 100%)",
                   color: "white",
@@ -245,18 +300,19 @@ export default function FindHelp() {
                   borderRadius: "30px",
                   fontSize: "18px",
                   fontWeight: "bold",
-                  cursor: loading ? "not-allowed" : "pointer",
+                  cursor: locationStatus === "loading" ? "not-allowed" : "pointer",
                   marginBottom: "15px",
                   width: "100%",
                   maxWidth: "300px"
                 }}
               >
-                {loading ? "⏳ Getting Location..." : "📍 Allow Location Access"}
+                {locationStatus === "loading" ? "⏳ Getting Location..." : "📍 Allow Location Access"}
               </button>
 
               <div>
                 <button
                   onClick={() => {
+                    setShowLocationModal(false);
                     setLocationStatus("denied");
                     fetchAllData();
                   }}
@@ -273,7 +329,7 @@ export default function FindHelp() {
                 </button>
               </div>
 
-              {locationStatus === "denied" && (
+              {error && (
                 <div style={{
                   marginTop: "20px",
                   padding: "15px",
@@ -282,8 +338,7 @@ export default function FindHelp() {
                   color: "#721c24",
                   fontSize: "14px"
                 }}>
-                  ⚠️ Location access was denied. Showing all centers. You can enable location
-                  in your browser settings to see nearby services.
+                  ⚠️ {error}
                 </div>
               )}
             </div>
@@ -294,6 +349,7 @@ export default function FindHelp() {
                 userLocation={userLocation} 
                 poisonCenters={poisonCenters}
                 hospitals={hospitals}
+                toxicologyLabs={toxicologyLabs}
               />
             </div>
           )}
@@ -324,7 +380,8 @@ export default function FindHelp() {
                 <div key={`${item.type}-${item.id}`} className="hospital-card-page">
                   <div className="card-header">
                     <div className="category-badge">
-                      {item.type === "poison" ? "☠️ Poison Control" : "🏥 Hospital"}
+                      {item.type === "poison" ? "☠️ Poison Control" : 
+                       item.type === "lab" ? "🧪 Toxicology Lab" : "🏥 Hospital"}
                     </div>
                     {item.distance_km && (
                       <div className="distance-badge">

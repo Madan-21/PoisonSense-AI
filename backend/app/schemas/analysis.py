@@ -86,7 +86,7 @@ class AnalysisResponse(BaseModel):
     # Emergency info
     emergency_numbers: Dict[str, str] = {
         "emergency_services": "102",
-        "poison_control": "01-512345",
+        "poison_control": "01-4412505",
         "crisis_hotline": "100"
     }
     

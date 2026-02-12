@@ -1,53 +1,74 @@
-// Axios configuration - API Client Setup
-import axios from 'axios';
+// src/api/axios.js
+import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api/v1";
 
-// Create axios instance with default config
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-  timeout: 30000, // 30 seconds
+  timeout: 30000,
 });
 
-// Request interceptor - add auth token
+// ✅ Request interceptor - add token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem("access_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // ✅ custom flag default false
+    // (so we can skip special handling in some calls like logout)
+    if (config.skipAuthRedirect === undefined) {
+      config.skipAuthRedirect = false;
+    }
+
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor - handle errors
+// ✅ Response interceptor - keep REAL axios error
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
-      // Server responded with error
-      const { status, data } = error.response;
-      
+      const { status } = error.response;
+
+      // ✅ Auto clear token on 401 (but don’t force redirect)
       if (status === 401) {
-        // Token expired or invalid - clear and redirect
+<<<<<<< HEAD
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("user");
+
+        // ✅ If you want redirect ONLY when NOT logout:
+        // (logout request may return 401 if token already expired)
+        const skip = error.config?.skipAuthRedirect;
+        if (!skip) {
+          // Send user to HOME (not login)
+          window.location.href = "/";
+        }
+      }
+=======
+        // Token expired or invalid - only clear storage, don't auto-redirect
+        // Let the auth context handle the redirect
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
       }
       
-      // Return error message from backend
-      const message = data.detail || data.message || 'An error occurred';
-      return Promise.reject(new Error(message));
+      // Keep the full error response for better error handling
+      return Promise.reject(error);
     } else if (error.request) {
       // Network error
-      return Promise.reject(new Error('Network error. Please check your connection.'));
+      error.message = 'Network error. Please check your connection.';
+      return Promise.reject(error);
+>>>>>>> main
     }
+
+    // ✅ IMPORTANT: don't wrap into new Error()
     return Promise.reject(error);
   }
 );

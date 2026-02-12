@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { getErrorMessage } from "../utils/errorHandler";
 
 // Valid TLDs for email validation
 const VALID_TLDS = new Set([
@@ -60,7 +61,7 @@ const validateEmail = (email) => {
   
   return { valid: true, error: null };
 };
-
+// Login page
 export default function Login() {
   const [remember, setRemember] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -96,7 +97,7 @@ export default function Login() {
       await login(email.toLowerCase(), password);
       navigate("/"); // Redirect to home on success
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || err.message || "Login failed. Please check your credentials.";
+      const errorMsg = getErrorMessage(err, "Login failed. Please check your credentials.");
       
       // Check if email verification is required
       if (errorMsg.includes('not verified') || errorMsg.includes('verification')) {
@@ -154,8 +155,12 @@ export default function Login() {
       <div className="auth-container">
         {/* Logo / Header */}
         <div className="auth-header">
-          {/* ✅ Logo should be in: frontend/public/images/logo.jpg */}
-          <img src="/images/logo.jpg" alt="PoisonSense AI" />
+          {/* Logo with shield icon */}
+          <div className="logo-circle">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="white">
+              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+            </svg>
+          </div>
           <h2>PoisonSense AI</h2>
           <h3>Welcome Back</h3>
           <p>Sign in to access emergency support</p>
@@ -238,7 +243,7 @@ export default function Login() {
         </form>
 
         {/* Emergency Box */}
-        <div className="emergency-box">
+        <div className="emergency-box"> 
           <h4>⚠ Emergency Situation?</h4>
           <p>You can access emergency features without logging in.</p>
           <Link to="/findhelp" className="btn-emergency">

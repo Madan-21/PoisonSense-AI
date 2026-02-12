@@ -34,9 +34,15 @@ export const centerApi = {
 
   // Find nearby toxicology labs
   getNearbyLabs: async (latitude, longitude, radiusKm = 50) => {
-    const response = await api.get('/hospitals/labs/nearby', {
+    const response = await api.get('/labs/nearby', {
       params: { latitude, longitude, radius_km: radiusKm }
     });
+    return response.data;
+  },
+  
+  // List all toxicology labs
+  getAllLabs: async () => {
+    const response = await api.get('/labs/');
     return response.data;
   },
 

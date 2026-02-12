@@ -5,6 +5,7 @@ from app.models.hospital import Hospital, ToxicologyLab, HospitalType
 from app.models.poison_center import PoisonCenter, AntidoteInventory
 from app.models.poison import Poison, ManagementProtocol, PoisonCategory, SeverityLevel
 from app.models.ai_log import AnalysisLog, AIModelVersion
+from app.models.blog_submission import BlogSubmission
 
 __all__ = [
     "User",
@@ -23,4 +24,5 @@ __all__ = [
     "SeverityLevel",
     "AnalysisLog",
     "AIModelVersion",
+    "BlogSubmission",
 ]

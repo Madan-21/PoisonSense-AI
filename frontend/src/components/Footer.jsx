@@ -96,7 +96,7 @@ export default function Footer() {
             </li>
             <li>
               <span className="em-label">Poison Control Center</span>
-              <span className="em-number">01-512345</span>
+              <span className="em-number">01-4412505</span>
             </li>
             <li>
               <span className="em-label">Crisis Hotline</span>
