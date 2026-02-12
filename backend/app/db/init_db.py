@@ -12,10 +12,39 @@ from app.models.ai_log import AIModelVersion
 from app.models.blog_submission import BlogSubmission
 from app.core.security import get_password_hash
 
+from sqlalchemy import text
+
 def create_tables():
     """Create all database tables"""
     Base.metadata.create_all(bind=engine)
     print("✅ All database tables created")
+    
+    # Add new columns to existing users table if they don't exist
+    _migrate_users_table()
+
+def _migrate_users_table():
+    """Add new professional registration columns to users table if missing"""
+    new_columns = {
+        "registration_number": "VARCHAR(100)",
+        "license_document": "VARCHAR(500)",
+        "specialization": "VARCHAR(255)",
+        "experience_years": "INTEGER",
+        "hospital_address": "TEXT",
+    }
+    
+    with engine.connect() as conn:
+        # Get existing columns
+        result = conn.execute(text("PRAGMA table_info(users)"))
+        existing_cols = {row[1] for row in result.fetchall()}
+        
+        for col_name, col_type in new_columns.items():
+            if col_name not in existing_cols:
+                try:
+                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}"))
+                    conn.commit()
+                    print(f"  ✅ Added column '{col_name}' to users table")
+                except Exception as e:
+                    print(f"  ⚠️ Could not add column '{col_name}': {e}")
 
 def seed_admin_user(db: Session):
     """Create default admin user"""
