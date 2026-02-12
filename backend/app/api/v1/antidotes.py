@@ -279,5 +279,11 @@ def _parse_contraindications(text: str) -> List[str]:
             "Do not induce vomiting without medical guidance",
             "Do not give activated charcoal for corrosives",
             "Do not delay transport to hospital"
+            "Do not induce vomiting without medical guidance", 
+            "Do not give activated charcoal for corrosives",
+            "Do not delay transport to hospital"
+            "Do not induce vomiting without medical guidance",
+            "Do not give activated charcoal for corrosives",
+            "Do not delay transport to hospital"
         ]
     return _parse_steps(text)
