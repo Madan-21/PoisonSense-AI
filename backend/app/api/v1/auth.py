@@ -1,9 +1,11 @@
 # Login / Signup with Email Verification
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from pydantic import ValidationError
+import os
+import uuid
 
 from app.db.session import get_db
 from app.models.user import User, UserRole
@@ -73,6 +75,11 @@ async def signup(user_data: UserSignup, db: Session = Depends(get_db)):
         "password": user_data.password,
         "full_name": user_data.full_name,
         "phone": user_data.phone,
+        "role": user_data.role if user_data.role else "patient",
+        "registration_number": user_data.registration_number,
+        "specialization": user_data.specialization,
+        "experience_years": user_data.experience_years,
+        "hospital_address": user_data.hospital_address,
         "created_at": datetime.utcnow()
     }
     
@@ -131,19 +138,35 @@ async def verify_email_otp(data: VerifyOTPRequest, db: Session = Depends(get_db)
     if existing_user:
         # Update existing unverified user
         existing_user.is_verified = True
+        existing_user.admin_approved = False  # Needs admin approval
         existing_user.updated_at = datetime.utcnow()
         user = existing_user
     else:
         # Create new user from pending data
         user_data = pending_users[email]
+        
+        # Map role string to UserRole enum
+        role_str = user_data.get("role", "patient").lower()
+        if role_str == "doctor":
+            user_role = UserRole.DOCTOR
+        elif role_str in ["hospital", "hospital_admin"]:
+            user_role = UserRole.HOSPITAL_ADMIN
+        else:
+            user_role = UserRole.PATIENT
+        
         user = User(
             email=email,
             hashed_password=get_password_hash(user_data["password"]),
             full_name=user_data["full_name"],
             phone=user_data["phone"],
-            role=UserRole.PATIENT,
+            role=user_role,
+            registration_number=user_data.get("registration_number"),
+            specialization=user_data.get("specialization"),
+            experience_years=user_data.get("experience_years"),
+            hospital_address=user_data.get("hospital_address"),
             is_active=True,
             is_verified=True,
+            admin_approved=False,  # Requires admin approval
             created_at=datetime.utcnow()
         )
         db.add(user)
@@ -157,18 +180,13 @@ async def verify_email_otp(data: VerifyOTPRequest, db: Session = Depends(get_db)
     # Send welcome email (async, don't wait)
     await send_welcome_email(email, user.full_name)
     
-    # Create access token
-    access_token = create_access_token(
-        data={"sub": str(user.id)},
-        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
-    
+    # Return success message WITHOUT access token
     return VerificationResponse(
-        message="Email verified successfully! Welcome to PoisonSense AI.",
+        message="Email verified successfully! Your account is pending admin approval. You will be able to login within 24 hours after verification.",
         verified=True,
-        access_token=access_token,
-        token_type="bearer",
-        user=UserResponse.model_validate(user)
+        access_token=None,  # No token - user must wait for approval
+        token_type=None,
+        user=None  # Don't return user data yet
     )
 
 @router.post("/resend-otp")
@@ -239,6 +257,14 @@ async def login(
     if not user.is_verified:
         # Send new OTP
         success, message = await send_verification_email(user.email, user.full_name)
+        
+        # Check if email service is not configured (manual verification required)
+        if not success and "24 hours" in message:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your account is pending verification. This typically takes up to 24 hours. You will receive a notification once your account is verified."
+            )
+        
         error_detail = "Email not verified. A new verification code has been sent to your email."
         
         # Include OTP in message for dev mode
@@ -248,6 +274,13 @@ async def login(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=error_detail
+        )
+    
+    # Check admin approval
+    if not user.admin_approved:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account is pending admin approval. Please wait 24-48 hours. You will receive an email notification once approved."
         )
     
     # Update last login
@@ -300,6 +333,13 @@ async def login_json(user_data: UserLogin, db: Session = Depends(get_db)):
             detail=error_detail
         )
     
+    # Check admin approval
+    if not user.admin_approved:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account is pending admin approval. Please wait 24-48 hours. You will receive an email notification once approved."
+        )
+    
     user.last_login = datetime.utcnow()
     db.commit()
     
@@ -327,3 +367,65 @@ async def logout(current_user: User = Depends(get_current_active_user)):
     Logout (client should discard token)
     """
     return {"message": "Successfully logged out"}
+
+
+@router.post("/upload-license")
+async def upload_license(
+    email: str = Form(...),
+    license_file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Upload license/registration document for a pending user.
+    Called right after OTP verification during signup.
+    Accepts PDF, JPG, JPEG, PNG files up to 5MB.
+    """
+    email = email.lower()
+    
+    # Validate file type
+    allowed_types = {"application/pdf", "image/jpeg", "image/jpg", "image/png"}
+    if license_file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file type. Only PDF, JPG, and PNG files are allowed."
+        )
+    
+    # Read file content and check size (5MB limit)
+    content = await license_file.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File too large. Maximum size is 5MB."
+        )
+    
+    # Find user
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found."
+        )
+    
+    # Create upload directory
+    upload_dir = os.path.join(os.getcwd(), settings.LICENSE_UPLOAD_DIR)
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    # Generate unique filename
+    ext = os.path.splitext(license_file.filename)[1] or ".pdf"
+    unique_name = f"{user.id}_{uuid.uuid4().hex[:8]}{ext}"
+    file_path = os.path.join(upload_dir, unique_name)
+    
+    # Save file
+    with open(file_path, "wb") as f:
+        f.write(content)
+    
+    # Store relative path in database
+    relative_path = f"{settings.LICENSE_UPLOAD_DIR}/{unique_name}"
+    user.license_document = relative_path
+    user.updated_at = datetime.utcnow()
+    db.commit()
+    
+    return {
+        "message": "License document uploaded successfully.",
+        "file_path": relative_path
+    }

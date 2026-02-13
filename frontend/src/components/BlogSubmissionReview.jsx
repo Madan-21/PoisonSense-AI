@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import api from "../api/axios";
 import "../styles/BlogSubmissionReview.css";
 
 const BlogSubmissionReview = () => {
@@ -14,60 +15,11 @@ const BlogSubmissionReview = () => {
   const fetchSubmissions = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("access_token");
-      const response = await fetch("/api/v1/blog/submissions", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSubmissions(data);
-      } else {
-        console.error("Failed to fetch submissions");
-        // Mock data for development
-        setSubmissions([
-          {
-            id: 1,
-            title: "Understanding Pesticide Safety in Agriculture",
-            category: "Prevention",
-            author_email: "farmer@example.com",
-            description: "A comprehensive guide on safe pesticide handling practices for farmers",
-            content: "Pesticides are essential tools in modern agriculture, but they require careful handling...",
-            status: "pending",
-            created_at: "2024-01-20T10:30:00",
-            featured_image: null,
-          },
-          {
-            id: 2,
-            title: "First Aid for Snake Bites: What You Should Know",
-            category: "First Aid",
-            author_email: "doctor@hospital.com",
-            description: "Essential first aid steps for snake bite victims",
-            content: "Snake bites can be life-threatening emergencies. Here's what you need to know...",
-            status: "pending",
-            created_at: "2024-01-21T14:15:00",
-            featured_image: null,
-          },
-        ]);
-      }
+      const response = await api.get("/blog/submissions");
+      setSubmissions(response.data || []);
     } catch (error) {
       console.error("Error fetching submissions:", error);
-      // Mock data for development
-      setSubmissions([
-        {
-          id: 1,
-          title: "Understanding Pesticide Safety in Agriculture",
-          category: "Prevention",
-          author_email: "farmer@example.com",
-          description: "A comprehensive guide on safe pesticide handling practices for farmers",
-          content: "Pesticides are essential tools in modern agriculture, but they require careful handling...",
-          status: "pending",
-          created_at: "2024-01-20T10:30:00",
-          featured_image: null,
-        },
-      ]);
+      setSubmissions([]);
     } finally {
       setLoading(false);
     }
@@ -76,27 +28,14 @@ const BlogSubmissionReview = () => {
   const handleAction = async (submissionId, action) => {
     try {
       setActionLoading(true);
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(`/api/v1/blog/submissions/${submissionId}/${action}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ comment: null })
-      });
-
-      if (response.ok) {
-        // Refresh submissions
-        await fetchSubmissions();
-        setSelectedSubmission(null);
-        alert(`Submission ${action}ed successfully!`);
-      } else {
-        alert(`Failed to ${action} submission`);
-      }
+      await api.post(`/blog/submissions/${submissionId}/${action}`, { comment: null });
+      // Refresh submissions
+      await fetchSubmissions();
+      setSelectedSubmission(null);
+      alert(`Submission ${action}ed successfully!`);
     } catch (error) {
       console.error(`Error ${action}ing submission:`, error);
-      alert(`Error: ${error.message}`);
+      alert(`Failed to ${action} submission: ${error.response?.data?.detail || error.message}`);
     } finally {
       setActionLoading(false);
     }

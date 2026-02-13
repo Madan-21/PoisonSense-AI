@@ -57,8 +57,14 @@ class UserProfileResponse(BaseModel):
     allergies: Optional[str]
     medical_conditions: Optional[str]
     current_medications: Optional[str]
+    registration_number: Optional[str] = None
+    license_document: Optional[str] = None
+    specialization: Optional[str] = None
+    experience_years: Optional[int] = None
+    hospital_address: Optional[str] = None
     is_active: bool
     is_verified: bool
+    admin_approved: Optional[bool] = False
     created_at: datetime
     updated_at: datetime
     last_login: Optional[datetime]

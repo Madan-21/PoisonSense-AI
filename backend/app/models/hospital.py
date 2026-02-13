@@ -15,6 +15,7 @@ class Hospital(Base):
     __tablename__ = "hospitals"
     
     id = Column(Integer, primary_key=True, index=True)
+    admin_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Hospital admin user
     
     # Basic info
     name = Column(String(255), nullable=False)

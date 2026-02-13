@@ -1,816 +1,420 @@
-<<<<<<< HEAD
-import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { ragApi } from '../api/ragApi';
+import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { analysisApi } from '../api/analysisApi';
-import { useAuth } from '../context/AuthContext';
-import '../styles/AIAssessment.css';
+import '../styles/RagChat.css';
 
-const AiAssistant = () => {
-  const [message, setMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [userLocation, setUserLocation] = useState(null);
-  const [sessionId, setSessionId] = useState(null);
-  const [isEmergency, setIsEmergency] = useState(false);
-  const [identifiedPoison, setIdentifiedPoison] = useState(null);
-  const messagesEndRef = useRef(null);
-  const { user } = useAuth();
+/* ── Inline SVG Icons ──────────────────────────────────────────────── */
+const SendIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+  </svg>
+);
+
+const ResetIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+  </svg>
+);
+
+/* ── Sub-components ────────────────────────────────────────────────── */
+
+function SafetyBadge({ safety }) {
+  if (!safety || safety.risk_level === 'low') return null;
+  const level = safety.risk_level; // 'medium' | 'high'
+  const icons = { medium: '⚠️', high: '🚨' };
+  const labels = { medium: 'Moderate Risk', high: 'High Risk — Seek Help Immediately' };
+  return (
+    <div className={`safety-badge safety-${level}`}>
+      <span>{icons[level]}</span>
+      <span>{labels[level]}</span>
+      {safety.policy_notes && <span className="safety-note"> — {safety.policy_notes}</span>}
+    </div>
+  );
+}
+
+function SourceCard({ source, index }) {
+  const [expanded, setExpanded] = useState(false);
+  const score = (source.relevance_score * 100).toFixed(0);
+  const scoreLabel = score >= 85 ? 'High match' : score >= 70 ? 'Good match' : 'Partial match';
+  const scoreColor = score >= 85 ? '#22c55e' : score >= 70 ? '#f59e0b' : '#1a3a52';
+
+  return (
+    <div className="source-card" onClick={() => setExpanded(!expanded)}>
+      <div className="source-header">
+        <span className="source-num">{index + 1}</span>
+        <span className="source-title">{source.doc_title || 'Reference Document'}</span>
+        {source.page != null && <span className="source-page">p.{source.page}</span>}
+        <span className="source-score" style={{ color: scoreColor }}>{scoreLabel}</span>
+      </div>
+      {expanded && source.supporting_quote && (
+        <div className="source-detail">
+          <p className="source-quote">"{source.supporting_quote}"</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FollowUps({ questions, onSelect }) {
+  if (!questions || questions.length === 0) return null;
+  return (
+    <div className="follow-ups">
+      <span className="follow-label">Ask a follow-up:</span>
+      <div className="follow-chips">
+        {questions.map((q, i) => (
+          <button key={i} className="follow-chip" onClick={() => onSelect(q)}>
+            {q}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MessageBubble({ msg, onFollowUp }) {
+  if (msg.role === 'user') {
+    return (
+      <div className="msg-row msg-user">
+        <div className="msg-bubble user-bubble">
+          <p>{msg.content}</p>
+          <span className="msg-time">{msg.time}</span>
+        </div>
+        <div className="msg-avatar user-avatar">👤</div>
+      </div>
+    );
+  }
+
+  // Bot message
+  const data = msg.data || {};
+  return (
+    <div className="msg-row msg-bot">
+      <div className="msg-avatar bot-avatar">🧪</div>
+      <div className="msg-bubble bot-bubble">
+        <SafetyBadge safety={data.safety} />
+        <div className="msg-answer" dangerouslySetInnerHTML={{ __html: formatAnswer(data.answer || msg.content) }} />
+
+        {/* Confidence indicator */}
+        {data.confidence && data.confidence.score > 0 && data.confidence.basis === 'retrieval' && (
+          <div className="confidence-badge" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '3px 10px', borderRadius: 12, fontSize: '0.75rem',
+            marginTop: 6,
+            background: data.confidence.score >= 0.85 ? '#dcfce7' :
+                        data.confidence.score >= 0.70 ? '#fef9c3' : '#e8eef4',
+            color: data.confidence.score >= 0.85 ? '#166534' :
+                   data.confidence.score >= 0.70 ? '#854d0e' : '#1a3a52',
+          }}>
+            <span>{data.confidence.score >= 0.85 ? '🟢' : data.confidence.score >= 0.70 ? '🟡' : '🔵'}</span>
+            <span>{data.confidence.label} — {(data.confidence.score * 100).toFixed(0)}% from {data.confidence.num_sources} source{data.confidence.num_sources !== 1 ? 's' : ''}</span>
+          </div>
+        )}
+
+        {/* Why this answer — only show if meaningful */}
+        {data.why_this_answer && data.why_this_answer.trim() !== '' && 
+         !['Response generated from retrieved sources.', 'General informational query.', ''].includes(data.why_this_answer.trim()) && (
+          <details className="why-section">
+            <summary>💡 Why this answer?</summary>
+            <p>{data.why_this_answer}</p>
+          </details>
+        )}
+
+        {/* Sources — only show if there are real, meaningful sources */}
+        {data.sources && data.sources.length > 0 && data.sources.some(s => s.relevance_score >= 0.65) && (
+          <details className="sources-section">
+            <summary>📚 Sources ({data.sources.filter(s => s.relevance_score >= 0.65).length})</summary>
+            <div className="sources-list">
+              {data.sources.filter(s => s.relevance_score >= 0.65).map((s, i) => (
+                <SourceCard key={i} source={s} index={i} />
+              ))}
+            </div>
+          </details>
+        )}
+
+        {/* Follow-up questions */}
+        <FollowUps questions={data.follow_up_questions} onSelect={onFollowUp} />
+
+        {/* Emergency escalation */}
+        {data.safety?.emergency_escalation && (
+          <div className="safety-badge safety-high" style={{ marginTop: 12 }}>
+            🚨 {data.safety.emergency_escalation.slice(0, 200)}
+          </div>
+        )}
+
+        <span className="msg-time">{msg.time}</span>
+      </div>
+    </div>
+  );
+}
+
+function TypingIndicator() {
+  return (
+    <div className="msg-row msg-bot">
+      <div className="msg-avatar bot-avatar">🧪</div>
+      <div className="msg-bubble bot-bubble typing-bubble">
+        <div className="typing-dots">
+          <span /><span /><span />
+        </div>
+        <span className="typing-text">Searching knowledge base…</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Helpers ────────────────────────────────────────────────────────── */
+
+function formatAnswer(text) {
+  if (!text) return '';
+  let html = text;
   
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      type: 'bot',
-      text: `🤖 **Welcome to PoisonSense AI - Your Intelligent Toxicology Assistant**
-
-I'm an advanced Agentic AI designed to help you in poison emergencies. I can:
-
-• 🔍 **Analyze symptoms** to identify possible poisons
-• 🩹 **Provide first aid** instructions
-• 💊 **Look up antidotes** and treatment protocols
-• 🏥 **Find nearby hospitals** and poison centers
-• ⚠️ **Assess severity** and guide emergency response
-
-**How can I help you today?** Please describe the situation - what substance was involved, what symptoms are observed, and how long ago did exposure occur?
-
-📞 **Emergency Numbers (Nepal):**
-• Emergency: **102**
-• Poison Control (NPIC-TUTH): **+977-1-4412505**
-• Toll-Free: **1102**`,
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      isWelcome: true
+  // Remove useless inline citations like [Source: None, ...] or [Source: Unknown]
+  html = html.replace(/\[Source:\s*None[^\]]*\]/gi, '');
+  html = html.replace(/\[Source:\s*Unknown[^\]]*\]/gi, '');
+  html = html.replace(/📄\s*None[^<\n]*/gi, '');
+  
+  // Convert [Source: title, page: X, chunk_id: ...] to a subtle inline cite
+  html = html.replace(
+    /\[Source:\s*([^,\]]+?)(?:,\s*page:?\s*(\d+))?(?:,\s*chunk_id[^\]]*?)?\s*\]/gi,
+    (match, title, page) => {
+      const cleanTitle = title.trim();
+      if (page) return `<cite class="inline-cite" title="${cleanTitle}">${cleanTitle}, p.${page}</cite>`;
+      return `<cite class="inline-cite" title="${cleanTitle}">${cleanTitle}</cite>`;
     }
-  ]);
+  );
+  
+  // Newlines to <br/>
+  html = html.replace(/\n/g, '<br/>');
+  // Bold **text**
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Bullet lists: lines starting with - or •
+  html = html.replace(/((?:^|\<br\/\>)\s*[-•]\s.+(?:\<br\/\>\s*[-•]\s.+)*)/g, (match) => {
+    const items = match.split(/<br\/?>/g).filter(l => l.trim().match(/^[-•]/));
+    if (items.length === 0) return match;
+    const lis = items.map(i => `<li>${i.replace(/^\s*[-•]\s*/, '')}</li>`).join('');
+    return `<ul>${lis}</ul>`;
+  });
+  return html;
+}
 
-  // Get user location on mount
+function timeNow() {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+/* ── Welcome message ───────────────────────────────────────────────── */
+
+const WELCOME = {
+  role: 'bot',
+  content: "Welcome to **PoisonSense AI** 🧪\n\nI'm your safety-first poison information assistant. I provide evidence-based answers with full citations from verified toxicology sources.\n\n**I can help with:**\n- Identifying poison symptoms & first-aid steps\n- Safe storage & prevention guidance\n- 💊 Antidote information & availability\n- 🏥 Finding nearby hospitals & emergency rooms\n- ☎️ Poison control center contacts\n- Emergency contacts & escalation\n\n⚠️ **I am NOT a substitute for professional medical advice.** In an emergency, call your local poison control center or emergency services immediately.",
+  data: {
+    answer: "Welcome to **PoisonSense AI** 🧪\n\nI'm your safety-first poison information assistant. I provide evidence-based answers with full citations from verified toxicology sources.\n\n**I can help with:**\n- Identifying poison symptoms & first-aid steps\n- Safe storage & prevention guidance\n- 💊 Antidote information & availability\n- 🏥 Finding nearby hospitals & emergency rooms\n- ☎️ Poison control center contacts\n- Emergency contacts & escalation\n\n⚠️ **I am NOT a substitute for professional medical advice.** In an emergency, call your local poison control center or emergency services immediately.",
+    follow_up_questions: [
+      "What are common household poisons?",
+      "What is the antidote for paracetamol overdose?",
+      "Find hospitals near me",
+    ],
+    sources: [],
+    safety: { risk_level: 'low' },
+  },
+  time: timeNow(),
+};
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Main Component
+   ═══════════════════════════════════════════════════════════════════════ */
+
+export default function AiAssistant() {
+  const { user } = useAuth();
+  const [messages, setMessages] = useState([WELCOME]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
+  const [status, setStatus] = useState(null); // { collections, total_documents }
+  const [userLocation, setUserLocation] = useState(null); // { latitude, longitude }
+  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Auto-scroll to bottom — scroll only within the messages container,
+  // not the entire page (which caused the page to jump to the bottom)
   useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    }
+  }, [messages, loading]);
+
+  // Fetch status on mount + get user location
+  useEffect(() => {
+    // Scroll page to top on mount so the chat is visible from the start
+    window.scrollTo(0, 0);
+
+    ragApi.getStatus()
+      .then(setStatus)
+      .catch(() => setStatus(null));
+    
+    // Try to get user's location for hospital/center lookups
+    const stored = localStorage.getItem('userLocation');
+    if (stored) {
+      try {
+        setUserLocation(JSON.parse(stored));
+      } catch {}
+    }
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
+        (pos) => {
+          const loc = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+          setUserLocation(loc);
+          localStorage.setItem('userLocation', JSON.stringify(loc));
         },
-        (error) => console.log('Location not available:', error)
+        () => {}, // silently ignore denial
+        { enableHighAccuracy: false, timeout: 5000 }
       );
     }
   }, []);
 
-  const quickActions = [
-    '🧒 Child swallowed medicine',
-    '🧴 Cleaning product ingestion',
-    '🌿 Plant/mushroom ingestion',
-    '🐍 Snake bite emergency',
-    '🧪 Pesticide exposure',
-    '💊 Drug overdose',
-    '🔥 Chemical burn/acid',
-    '🏥 Find nearest hospital'
-  ];
+  // ── Send message ────────────────────────────────────────────────
+  const sendMessage = useCallback(async (text) => {
+    const trimmed = (text || input).trim();
+    if (!trimmed || loading) return;
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+    // Add user message
+    const userMsg = { role: 'user', content: trimmed, time: timeNow() };
+    setMessages(prev => [...prev, userMsg]);
+    setInput('');
+    setLoading(true);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const chatWithAgent = async (userMessage) => {
-    setIsTyping(true);
-    
     try {
-      console.log('Sending to Agentic AI:', userMessage);
-      console.log('Session ID:', sessionId);
-      console.log('Location:', userLocation);
-      
-      // Call the agentic AI chat endpoint
-      const result = await analysisApi.chatWithAgent(userMessage, {
-        latitude: userLocation?.latitude,
-        longitude: userLocation?.longitude,
-        sessionId: sessionId
-      });
-      
-      console.log('Agent Response:', result);
-      
-      // Update session ID for conversation continuity
-      if (result.session_id) {
-        setSessionId(result.session_id);
+      const data = await ragApi.ask(
+        trimmed,
+        sessionId,
+        userLocation?.latitude || null,
+        userLocation?.longitude || null,
+      );
+
+      // Capture session id for continuity
+      if (data.session_id && !sessionId) {
+        setSessionId(data.session_id);
       }
-      
-      // Update emergency status
-      if (result.is_emergency) {
-        setIsEmergency(true);
-      }
-      
-      // Update identified poison
-      if (result.identified_poison) {
-        setIdentifiedPoison(result.identified_poison);
-      }
-      
-      // Create response message
-      const botResponse = {
-        id: messages.length + 2,
-        type: 'bot',
-        text: result.message,
-        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        analysisResult: result,
-        isEmergency: result.is_emergency,
-        toolsUsed: result.tools_used
+
+      const botMsg = {
+        role: 'bot',
+        content: data.answer,
+        data,
+        time: timeNow(),
       };
-      
-      setMessages(prev => [...prev, botResponse]);
-      
-    } catch (error) {
-      console.error('Agent Error:', error);
-      console.error('Error details:', error.response?.data);
-      
-      // Build error message with specific details
-      let errorMessage = "I apologize, but I'm having trouble processing your request.";
-      
-      if (error.response?.status === 401) {
-        errorMessage = "Please log in to use the AI analysis feature for full functionality. Basic emergency info is still available.";
-      } else if (error.response?.status === 500) {
-        errorMessage = "The AI service is temporarily unavailable. Please try again in a moment.";
-      } else if (error.code === 'ERR_NETWORK') {
-        errorMessage = "Cannot connect to the server. Please check if the backend is running.";
-      }
-      
-      // Fallback to helpful response with emergency info
-      const botResponse = {
-        id: messages.length + 2,
-        type: 'bot',
-        text: `${errorMessage}
-
-**🚨 For immediate help in Nepal:**
-📞 **Emergency:** 102
-☎️ **National Poison Centre (TUTH):** +977-1-4412505
-🆘 **Toll-Free:** 1102
-
-**Please provide more details:**
-• What substance was involved?
-• What symptoms are you observing?
-• How long ago did exposure occur?
-• What is the person's age and weight?
-
-⚠️ *If this is a life-threatening emergency, call 102 immediately!*`,
-        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        isError: true
+      setMessages(prev => [...prev, botMsg]);
+    } catch (err) {
+      console.error('RAG ask error:', err);
+      const errorMsg = {
+        role: 'bot',
+        content: 'Sorry, something went wrong. Please try again.',
+        data: {
+          answer: '⚠️ Unable to reach the knowledge base. Make sure the backend is running and PDFs have been ingested.',
+          why_this_answer: `Error: ${err?.response?.data?.detail || err.message}`,
+          sources: [],
+          follow_up_questions: [],
+          safety: { risk_level: 'low' },
+        },
+        time: timeNow(),
       };
-      setMessages(prev => [...prev, botResponse]);
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
-      setIsTyping(false);
+      setLoading(false);
+      inputRef.current?.focus();
     }
-  };
+  }, [input, loading, sessionId, userLocation]);
 
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      const newMessage = {
-        id: messages.length + 1,
-        type: 'user',
-        text: message,
-        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-      };
-      setMessages(prev => [...prev, newMessage]);
-      const sentMessage = message;
-      setMessage('');
-      chatWithAgent(sentMessage);
+  // ── Follow-up click ─────────────────────────────────────────────
+  const handleFollowUp = useCallback((question) => {
+    setInput(question);
+    // Small delay to let state update, then send
+    setTimeout(() => sendMessage(question), 50);
+  }, [sendMessage]);
+
+  // ── Reset chat ──────────────────────────────────────────────────
+  const handleReset = async () => {
+    if (sessionId) {
+      try { await ragApi.resetSession(sessionId); } catch {}
     }
+    setMessages([{ ...WELCOME, time: timeNow() }]);
+    setSessionId(null);
+    setInput('');
   };
 
-  const handleQuickAction = (action) => {
-    // Remove emoji from the start of the action
-    const cleanAction = action.replace(/^[^\w\s]+\s*/, '');
-    
-    const newMessage = {
-      id: messages.length + 1,
-      type: 'user',
-      text: cleanAction,
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-    };
-    setMessages(prev => [...prev, newMessage]);
-    chatWithAgent(cleanAction);
-  };
-
-  const handleKeyPress = (e) => {
+  // ── Keyboard handler ───────────────────────────────────────────
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      sendMessage();
     }
   };
 
-  const handleNewConversation = () => {
-    setMessages([{
-      id: 1,
-      type: 'bot',
-      text: `🤖 **New conversation started!**
-
-I'm ready to help you with a new poison-related inquiry. Please describe the situation - what substance was involved, what symptoms are observed, and how long ago did exposure occur?
-
-📞 **Emergency Numbers (Nepal):**
-• Emergency: **102**
-• Poison Control (NPIC-TUTH): **+977-1-4412505**`,
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-    }]);
-    setSessionId(null);
-    setIsEmergency(false);
-    setIdentifiedPoison(null);
-  };
-
-  const handleEmergencyCall = () => {
-    window.location.href = 'tel:102';
-  };
+  // ── Status helpers ──────────────────────────────────────────────
+  const isOnline = status && status.has_data;
+  const statusLabel = isOnline ? 'Online' : 'Offline';
 
   return (
-    <div className="assessment-page">
-      {/* Navigation */}
+    <>
       <Navbar />
-
-      <div className="assessment-container">
-        {/* Header */}
-        <header className="assessment-header">
-          <button className="back-button" onClick={handleNewConversation} title="New Conversation">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 5V19M5 12H19" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-          <div className="header-title">
-            <h1>🤖 PoisonSense AI Agent</h1>
-            <div className="status-indicator">
-              <span className={`status-dot ${isEmergency ? 'emergency' : ''}`}></span>
-              <span className="status-text">
-                {isEmergency ? '🚨 Emergency Mode' : identifiedPoison ? `Identified: ${identifiedPoison}` : 'Active'}
+      <div className="rag-page">
+        <div className="rag-container">
+          {/* ── Header ──────────────────────────────────────────── */}
+          <div className="rag-header">
+            <div className="rag-header-left">
+              <div className="rag-logo">🧪</div>
+              <div>
+                <h1>PoisonSense AI</h1>
+                <p className="rag-subtitle">Citation-backed toxicology assistant</p>
+              </div>
+            </div>
+            <div className="rag-header-right">
+              <span className={`status-dot ${isOnline ? 'online' : 'empty'}`}>
+                {isOnline ? '●' : '○'} {statusLabel}
               </span>
+              <button className="btn-reset" onClick={handleReset} title="Reset conversation">
+                <ResetIcon />
+              </button>
             </div>
           </div>
-          <div className="header-actions">
-            {sessionId && (
-              <span className="session-badge" title="Conversation active">
-                💬
-              </span>
-            )}
-          </div>
-        </header>
 
-        {/* Main Content */}
-        <main className="assessment-content">
-          {/* Medical Disclaimer */}
-          <div className={`disclaimer-box ${isEmergency ? 'emergency' : ''}`}>
-            <div className="disclaimer-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="10" stroke={isEmergency ? "#DC2626" : "#D97706"} strokeWidth="2"/>
-                <path d="M12 8V12M12 16H12.01" stroke={isEmergency ? "#DC2626" : "#D97706"} strokeWidth="2" strokeLinecap="round"/>
-              </svg>
+          {/* ── Messages ────────────────────────────────────────── */}
+          <div className="rag-messages" ref={messagesContainerRef}>
+            {messages.map((msg, i) => (
+              <MessageBubble key={i} msg={msg} onFollowUp={handleFollowUp} />
+            ))}
+            {loading && <TypingIndicator />}
+          </div>
+
+          {/* ── Input ───────────────────────────────────────────── */}
+          <div className="rag-input-area">
+            <div className="rag-input-wrap">
+              <textarea
+                ref={inputRef}
+                className="rag-input"
+                placeholder="Ask about poisons, symptoms, first aid, prevention…"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                rows={1}
+                disabled={loading}
+              />
+              <button
+                className="rag-send"
+                onClick={() => sendMessage()}
+                disabled={loading || !input.trim()}
+                title="Send message"
+              >
+                <SendIcon />
+              </button>
             </div>
-            <p className="disclaimer-text">
-              {isEmergency 
-                ? '🚨 EMERGENCY DETECTED - Call 102 immediately for life-threatening situations!'
-                : 'Medical Disclaimer: This AI assistant provides guidance only. In emergencies, contact local emergency services immediately (102).'
-              }
+            <p className="rag-disclaimer">
+              <strong>⚠️ Not medical advice.</strong> Always consult a healthcare professional in emergencies.
             </p>
           </div>
-
-          {/* Chat Messages */}
-          <div className="chat-messages">
-            {messages.map((msg) => (
-              <div key={msg.id} className={`message-wrapper ${msg.type} ${msg.isEmergency ? 'emergency' : ''}`}>
-                {msg.type === 'bot' && (
-                  <div className={`bot-avatar ${msg.isEmergency ? 'emergency' : ''}`}>
-                    {msg.isEmergency ? '🚨' : '🤖'}
-                  </div>
-                )}
-                <div className={`message-bubble ${msg.isEmergency ? 'emergency' : ''}`}>
-                  <div 
-                    className="message-text"
-                    style={{ whiteSpace: 'pre-wrap' }}
-                    dangerouslySetInnerHTML={{ 
-                      __html: msg.text
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\n/g, '<br/>')
-                    }}
-                  />
-                  <div className="message-footer">
-                    <span className="message-time">{msg.time}</span>
-                    {msg.toolsUsed && msg.toolsUsed.length > 0 && (
-                      <span className="tools-used" title={`Tools: ${msg.toolsUsed.join(', ')}`}>
-                        🔧 {msg.toolsUsed.length} tools
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            {isTyping && (
-              <div className="message-wrapper bot">
-                <div className="bot-avatar">🤖</div>
-                <div className="message-bubble typing">
-                  <div className="typing-indicator">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
-                  <span className="typing-text">AI is analyzing...</span>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        </main>
-
-        {/* Footer */}
-        <footer className="assessment-footer">
-          {/* Quick Actions */}
-          <div className="quick-actions">
-            <div className="quick-actions-scroll">
-              {quickActions.map((action, index) => (
-                <button
-                  key={index}
-                  className="quick-action-btn"
-                  onClick={() => handleQuickAction(action)}
-                >
-                  {action}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Input Area */}
-          <div className="input-area">
-            <button className="mic-button" title="Voice input (coming soon)">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 1C10.34 1 9 2.34 9 4V12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12V4C15 2.34 13.66 1 12 1Z" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M19 10V12C19 15.866 15.866 19 12 19C8.13401 19 5 15.866 5 12V10" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M12 19V23M8 23H16" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            <textarea
-              className="message-input"
-              placeholder="Describe the situation in detail... (Press Enter to send)"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              rows="1"
-            />
-            <button 
-              className={`send-button ${message.trim() ? 'active' : ''}`} 
-              onClick={handleSendMessage}
-              disabled={!message.trim() || isTyping}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2.01 21L23 12L2.01 3L2 10L17 12L2 14L2.01 21Z" fill="white"/>
-              </svg>
-            </button>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="action-buttons">
-            <Link to="/poison-management" className="view-results-btn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2"/>
-                <path d="M12 8L12 12M12 16L12.01 16" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-              View Poison Database & Antidotes
-            </Link>
-            <Link to="/find-help" className="view-results-btn secondary">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 5.02944 7.02944 1 12 1C16.9706 1 21 5.02944 21 10Z" stroke="white" strokeWidth="2"/>
-                <circle cx="12" cy="10" r="3" stroke="white" strokeWidth="2"/>
-              </svg>
-              Find Nearby Help
-            </Link>
-          </div>
-        </footer>
+        </div>
       </div>
-
-      {/* Floating Emergency Call Button */}
-      <button 
-        className={`floating-call-btn ${isEmergency ? 'emergency-pulse' : ''}`} 
-        title="Call Emergency (102)"
-        onClick={handleEmergencyCall}
-      >
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-          <path d="M22 16.92V19.92C22.0011 20.1985 21.9441 20.4741 21.8325 20.7293C21.7209 20.9845 21.5573 21.2136 21.3521 21.4019C21.1469 21.5901 20.9046 21.7335 20.6408 21.8227C20.3769 21.9119 20.0974 21.9451 19.82 21.92C16.7428 21.5856 13.787 20.5342 11.19 18.85C8.77383 17.3147 6.72534 15.2662 5.19 12.85C3.49998 10.2412 2.44824 7.271 2.12 4.18C2.09501 3.90347 2.12788 3.62476 2.2165 3.36162C2.30513 3.09849 2.44757 2.85669 2.63477 2.65162C2.82196 2.44655 3.04981 2.28271 3.30379 2.17052C3.55778 2.05833 3.83234 2.00026 4.11 2H7.11C7.59531 1.99522 8.06579 2.16708 8.43376 2.48353C8.80173 2.79999 9.04208 3.23945 9.11 3.72C9.23662 4.68007 9.47145 5.62273 9.81 6.53C9.94455 6.88792 9.97366 7.27691 9.89391 7.65088C9.81415 8.02485 9.62886 8.36811 9.36 8.64L8.09 9.91C9.51356 12.4135 11.5865 14.4864 14.09 15.91L15.36 14.64C15.6319 14.3711 15.9752 14.1858 16.3491 14.1061C16.7231 14.0263 17.1121 14.0555 17.47 14.19C18.3773 14.5286 19.3199 14.7634 20.28 14.89C20.7658 14.9585 21.2094 15.2032 21.5265 15.5775C21.8437 15.9518 22.0122 16.4296 22 16.92Z" fill="white"/>
-        </svg>
-        {isEmergency && <span className="emergency-text">CALL NOW</span>}
-      </button>
-
-      {/* Footer */}
       <Footer />
-    </div>
+    </>
   );
-};
-
-export default AiAssistant;
-=======
-import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
-import { analysisApi } from '../api/analysisApi';
-import { useAuth } from '../context/AuthContext';
-import '../styles/AIAssessment.css';
-
-const AiAssistant = () => {
-  const [message, setMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [userLocation, setUserLocation] = useState(null);
-  const [sessionId, setSessionId] = useState(null);
-  const [isEmergency, setIsEmergency] = useState(false);
-  const [identifiedPoison, setIdentifiedPoison] = useState(null);
-  const messagesEndRef = useRef(null);
-  const { user } = useAuth();
-  
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      type: 'bot',
-      text: `Hello! 👋 I'm **PoisonSense AI**, your friendly assistant for poison information and emergency guidance.
-
-I can help you with:
-- 🧪 **Poison Information** - Learn about various toxic substances
-- 💊 **Antidote Information** - What antidotes exist (for awareness)
-- 🩺 **Symptom Identification** - Understand symptoms of poisoning
-- 🏥 **Find Help** - Locate nearby hospitals and poison centers
-- 🚨 **Emergency Guidance** - What to do in poisoning cases
-
-**How can I assist you today?**
-
-Just type your question, or try one of the quick actions below! 💬
-
----
-⚠️ *If this is an emergency, please call **102** immediately!*
-
-*I'm here to provide information and guidance. For medical treatment, always consult a healthcare professional.*`,
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      isWelcome: true
-    }
-  ]);
-
-  // Get user location from localStorage (set on Home page)
-  useEffect(() => {
-    const storedLocation = localStorage.getItem('userLocation');
-    if (storedLocation) {
-      try {
-        const location = JSON.parse(storedLocation);
-        setUserLocation(location);
-        console.log('Using stored location:', location);
-      } catch (e) {
-        console.log('Error parsing stored location:', e);
-      }
-    }
-  }, []);
-
-  const quickActions = [
-    '🧒 Child swallowed medicine',
-    '🧴 Cleaning product ingestion',
-    '🌿 Plant/mushroom ingestion',
-    '🐍 Snake bite emergency',
-    '🧪 Pesticide exposure',
-    '💊 Drug overdose',
-    '🔥 Chemical burn/acid',
-    '🏥 Find nearest hospital'
-  ];
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const chatWithAgent = async (userMessage) => {
-    setIsTyping(true);
-    
-    try {
-      console.log('Sending to Agentic AI:', userMessage);
-      console.log('Session ID:', sessionId);
-      console.log('Location:', userLocation);
-      
-      // Call the agentic AI chat endpoint
-      const result = await analysisApi.chatWithAgent(userMessage, {
-        latitude: userLocation?.latitude,
-        longitude: userLocation?.longitude,
-        sessionId: sessionId
-      });
-      
-      console.log('Agent Response:', result);
-      
-      // Update session ID for conversation continuity
-      if (result.session_id) {
-        setSessionId(result.session_id);
-      }
-      
-      // Update emergency status
-      if (result.is_emergency) {
-        setIsEmergency(true);
-      }
-      
-      // Update identified poison
-      if (result.identified_poison) {
-        setIdentifiedPoison(result.identified_poison);
-      }
-      
-      // Create response message
-      const botResponse = {
-        id: messages.length + 2,
-        type: 'bot',
-        text: result.message,
-        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        analysisResult: result,
-        isEmergency: result.is_emergency,
-        toolsUsed: result.tools_used
-      };
-      
-      setMessages(prev => [...prev, botResponse]);
-      
-    } catch (error) {
-      console.error('Agent Error:', error);
-      console.error('Error details:', error.response?.data);
-      
-      // Build error message with specific details
-      let errorMessage = "I apologize, but I'm having trouble processing your request.";
-      
-      if (error.response?.status === 401) {
-        errorMessage = "Please log in to use the AI analysis feature for full functionality. Basic emergency info is still available.";
-      } else if (error.response?.status === 500) {
-        errorMessage = "The AI service is temporarily unavailable. Please try again in a moment.";
-      } else if (error.code === 'ERR_NETWORK') {
-        errorMessage = "Cannot connect to the server. Please check if the backend is running.";
-      }
-      
-      // Fallback to helpful response with emergency info
-      const botResponse = {
-        id: messages.length + 2,
-        type: 'bot',
-        text: `${errorMessage}
-
-**🚨 For immediate help in Nepal:**
-📞 **Emergency:** 102
-☎️ **National Poison Centre (TUTH):** +977-1-4412505
-🆘 **Toll-Free:** 1102
-
-**Please provide more details:**
-• What substance was involved?
-• What symptoms are you observing?
-• How long ago did exposure occur?
-• What is the person's age and weight?
-
-⚠️ *If this is a life-threatening emergency, call 102 immediately!*`,
-        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        isError: true
-      };
-      setMessages(prev => [...prev, botResponse]);
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      const newMessage = {
-        id: messages.length + 1,
-        type: 'user',
-        text: message,
-        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-      };
-      setMessages(prev => [...prev, newMessage]);
-      const sentMessage = message;
-      setMessage('');
-      chatWithAgent(sentMessage);
-    }
-  };
-
-  const handleQuickAction = (action) => {
-    // Remove emoji from the start of the action
-    const cleanAction = action.replace(/^[^\w\s]+\s*/, '');
-    
-    const newMessage = {
-      id: messages.length + 1,
-      type: 'user',
-      text: cleanAction,
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-    };
-    setMessages(prev => [...prev, newMessage]);
-    chatWithAgent(cleanAction);
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  const handleNewConversation = () => {
-    setMessages([{
-      id: 1,
-      type: 'bot',
-      text: `Hi there! 👋 Starting a fresh conversation.
-
-I'm **PoisonSense AI** - how can I help you today?
-
-You can ask me about:
-- Poison information and symptoms
-- Antidotes and first aid guidance
-- Finding nearby hospitals
-- Emergency guidance
-
-Just type your question! 💬
-
----
-🚨 *Emergency? Call **102** immediately!*`,
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-    }]);
-    setSessionId(null);
-    setIsEmergency(false);
-    setIdentifiedPoison(null);
-  };
-
-  const handleEmergencyCall = () => {
-    window.location.href = 'tel:102';
-  };
-
-  return (
-    <div className="assessment-page">
-      {/* Navigation */}
-      <Navbar />
-
-      <div className="assessment-container">
-        {/* Header */}
-        <header className="assessment-header">
-          <button className="back-button" onClick={handleNewConversation} title="New Conversation">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 5V19M5 12H19" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-          <div className="header-title">
-            <h1>🤖 PoisonSense AI Agent</h1>
-            <div className="status-indicator">
-              <span className={`status-dot ${isEmergency ? 'emergency' : ''}`}></span>
-              <span className="status-text">
-                {isEmergency ? '🚨 Emergency Mode' : identifiedPoison ? `Identified: ${identifiedPoison}` : 'Active'}
-              </span>
-            </div>
-          </div>
-          <div className="header-actions">
-            {sessionId && (
-              <span className="session-badge" title="Conversation active">
-                💬
-              </span>
-            )}
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="assessment-content">
-          {/* Medical Disclaimer */}
-          <div className={`disclaimer-box ${isEmergency ? 'emergency' : ''}`}>
-            <div className="disclaimer-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="10" stroke={isEmergency ? "#DC2626" : "#D97706"} strokeWidth="2"/>
-                <path d="M12 8V12M12 16H12.01" stroke={isEmergency ? "#DC2626" : "#D97706"} strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <p className="disclaimer-text">
-              {isEmergency 
-                ? '🚨 EMERGENCY DETECTED - Call 102 immediately for life-threatening situations!'
-                : 'Medical Disclaimer: This AI assistant provides guidance only. In emergencies, contact local emergency services immediately (102).'
-              }
-            </p>
-          </div>
-
-          {/* Chat Messages */}
-          <div className="chat-messages">
-            {messages.map((msg) => (
-              <div key={msg.id} className={`message-wrapper ${msg.type} ${msg.isEmergency ? 'emergency' : ''}`}>
-                {msg.type === 'bot' && (
-                  <div className={`bot-avatar ${msg.isEmergency ? 'emergency' : ''}`}>
-                    {msg.isEmergency ? '🚨' : '🤖'}
-                  </div>
-                )}
-                <div className={`message-bubble ${msg.isEmergency ? 'emergency' : ''}`}>
-                  <div 
-                    className="message-text"
-                    style={{ whiteSpace: 'pre-wrap' }}
-                    dangerouslySetInnerHTML={{ 
-                      __html: msg.text
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\n/g, '<br/>')
-                    }}
-                  />
-                  <div className="message-footer">
-                    <span className="message-time">{msg.time}</span>
-                    {msg.toolsUsed && msg.toolsUsed.length > 0 && (
-                      <span className="tools-used" title={`Tools: ${msg.toolsUsed.join(', ')}`}>
-                        🔧 {msg.toolsUsed.length} tools
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            {isTyping && (
-              <div className="message-wrapper bot">
-                <div className="bot-avatar">🤖</div>
-                <div className="message-bubble typing">
-                  <div className="typing-indicator">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
-                  <span className="typing-text">AI is analyzing...</span>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        </main>
-
-        {/* Footer */}
-        <footer className="assessment-footer">
-          {/* Quick Actions */}
-          <div className="quick-actions">
-            <div className="quick-actions-scroll">
-              {quickActions.map((action, index) => (
-                <button
-                  key={index}
-                  className="quick-action-btn"
-                  onClick={() => handleQuickAction(action)}
-                >
-                  {action}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Input Area */}
-          <div className="input-area">
-            <button className="mic-button" title="Voice input (coming soon)">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 1C10.34 1 9 2.34 9 4V12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12V4C15 2.34 13.66 1 12 1Z" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M19 10V12C19 15.866 15.866 19 12 19C8.13401 19 5 15.866 5 12V10" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M12 19V23M8 23H16" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            <textarea
-              className="message-input"
-              placeholder="Describe the situation in detail... (Press Enter to send)"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              rows="1"
-            />
-            <button 
-              className={`send-button ${message.trim() ? 'active' : ''}`} 
-              onClick={handleSendMessage}
-              disabled={!message.trim() || isTyping}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2.01 21L23 12L2.01 3L2 10L17 12L2 14L2.01 21Z" fill="white"/>
-              </svg>
-            </button>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="action-buttons">
-            <Link to="/poison-management" className="view-results-btn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2"/>
-                <path d="M12 8L12 12M12 16L12.01 16" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-              View Poison Database & Antidotes
-            </Link>
-            <Link to="/find-help" className="view-results-btn secondary">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 5.02944 7.02944 1 12 1C16.9706 1 21 5.02944 21 10Z" stroke="white" strokeWidth="2"/>
-                <circle cx="12" cy="10" r="3" stroke="white" strokeWidth="2"/>
-              </svg>
-              Find Nearby Help
-            </Link>
-          </div>
-        </footer>
-      </div>
-
-      {/* Floating Emergency Call Button */}
-      <button 
-        className={`floating-call-btn ${isEmergency ? 'emergency-pulse' : ''}`} 
-        title="Call Emergency (102)"
-        onClick={handleEmergencyCall}
-      >
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-          <path d="M22 16.92V19.92C22.0011 20.1985 21.9441 20.4741 21.8325 20.7293C21.7209 20.9845 21.5573 21.2136 21.3521 21.4019C21.1469 21.5901 20.9046 21.7335 20.6408 21.8227C20.3769 21.9119 20.0974 21.9451 19.82 21.92C16.7428 21.5856 13.787 20.5342 11.19 18.85C8.77383 17.3147 6.72534 15.2662 5.19 12.85C3.49998 10.2412 2.44824 7.271 2.12 4.18C2.09501 3.90347 2.12788 3.62476 2.2165 3.36162C2.30513 3.09849 2.44757 2.85669 2.63477 2.65162C2.82196 2.44655 3.04981 2.28271 3.30379 2.17052C3.55778 2.05833 3.83234 2.00026 4.11 2H7.11C7.59531 1.99522 8.06579 2.16708 8.43376 2.48353C8.80173 2.79999 9.04208 3.23945 9.11 3.72C9.23662 4.68007 9.47145 5.62273 9.81 6.53C9.94455 6.88792 9.97366 7.27691 9.89391 7.65088C9.81415 8.02485 9.62886 8.36811 9.36 8.64L8.09 9.91C9.51356 12.4135 11.5865 14.4864 14.09 15.91L15.36 14.64C15.6319 14.3711 15.9752 14.1858 16.3491 14.1061C16.7231 14.0263 17.1121 14.0555 17.47 14.19C18.3773 14.5286 19.3199 14.7634 20.28 14.89C20.7658 14.9585 21.2094 15.2032 21.5265 15.5775C21.8437 15.9518 22.0122 16.4296 22 16.92Z" fill="white"/>
-        </svg>
-        {isEmergency && <span className="emergency-text">CALL NOW</span>}
-      </button>
-
-      {/* Footer */}
-      <Footer />
-    </div>
-  );
-};
-
-export default AiAssistant;
->>>>>>> main
+}

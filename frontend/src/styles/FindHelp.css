@@ -1,0 +1,210 @@
+/* ===== FindHelp “Google-like” horizontal cards ===== */
+
+.findhelp-results {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 8px 16px 32px;
+}
+
+.resource-card {
+  background: #fff;
+  border: 2px solid #22c55e;          /* green outline like image 2 */
+  border-radius: 14px;
+  padding: 18px;
+  margin: 18px 0;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+.resource-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.recommended-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #10b981;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.2px;
+  margin-bottom: 10px;
+  width: fit-content;
+}
+
+.resource-card-main {
+  display: flex;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.resource-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.icon-hospital { background: #ef4444; }   /* red */
+.icon-poison   { background: #eaeaea; }   /* orange */
+.icon-lab      { background: #b4b2b9; }   /* purple */
+
+.resource-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resource-meta {
+  margin-top: 6px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: #64748b;
+  font-size: 13px;
+  align-items: center;
+}
+
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 4px;
+  height: 4px;
+  background: #cbd5e1;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.resource-lines {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+  color: #334155;
+  font-size: 14px;
+}
+
+.line {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.line .label {
+  width: 18px;
+  text-align: center;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.open-pill {
+  background: #dcfce7;
+  color: #15803d;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  margin-left: 6px;
+}
+
+.resource-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+  min-width: 180px;
+}
+
+.action-btn {
+  border: none;
+  text-decoration: none;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-weight: 800;
+  font-size: 14px;
+  width: 160px;
+  text-align: center;
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  gap: 8px;
+  align-items: center;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+}
+
+.btn-call {
+  background: #ef4444;
+  color: #fff;
+}
+
+.btn-dir {
+  background: #2563eb;
+  color: #fff;
+}
+
+.btn-details {
+  background: #f8fafc;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  box-shadow: none;
+}
+
+.services-row {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  background: #f1f5f9;
+  color: #0f172a;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.tag.verified { background: #dcfce7; color: #15803d; }
+.tag.govt     { background: #e0e7ff; color: #3730a3; }
+
+/* Responsive: stack actions below on small screens */
+@media (max-width: 768px) {
+  .resource-card-top {
+    flex-direction: column;
+  }
+  .resource-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: stretch;
+    justify-content: flex-start;
+    min-width: 0;
+  }
+  .action-btn {
+    width: auto;
+    flex: 1;
+    min-width: 140px;
+  }
+  .resource-title {
+    white-space: normal;
+  }
+}

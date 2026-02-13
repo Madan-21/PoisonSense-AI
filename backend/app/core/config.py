@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     ML_MODEL_PATH: str = "app/ml/models"
     ML_DATA_PATH: str = "app/ml/data"
     
+    # File Upload
+    LICENSE_UPLOAD_DIR: str = "uploads/licenses"
+    
     # External APIs (optional)
     GOOGLE_MAPS_API_KEY: Optional[str] = None
     
@@ -41,5 +44,6 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"
 
 settings = Settings()

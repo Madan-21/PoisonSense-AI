@@ -10,6 +10,7 @@ class UserRole(str, enum.Enum):
     DOCTOR = "doctor"
     HOSPITAL_ADMIN = "hospital_admin"
     POISON_CENTER_ADMIN = "poison_center_admin"
+    BLOG_REVIEWER = "blog_reviewer"
     ADMIN = "admin"
 
 class User(Base):
@@ -36,9 +37,17 @@ class User(Base):
     medical_conditions = Column(Text)  # JSON string
     current_medications = Column(Text)  # JSON string
     
+    # Professional registration (for doctors/hospitals during signup)
+    registration_number = Column(String(100))  # Medical license or hospital registration number
+    license_document = Column(String(500))  # Path to uploaded license document
+    specialization = Column(String(255))  # Doctor specialization or hospital department
+    experience_years = Column(Integer)  # Doctor experience years
+    hospital_address = Column(Text)  # Hospital address (for hospital_admin)
+    
     # Account status
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
+    admin_approved = Column(Boolean, default=False)  # Requires admin approval after email verification
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)

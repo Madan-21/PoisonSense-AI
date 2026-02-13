@@ -1,11 +1,17 @@
 # Hospitals endpoints
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Body, status
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from sqlalchemy import func, and_
+from typing import List, Optional, Dict, Any
+from datetime import datetime, timedelta
+from pydantic import BaseModel
 
 from app.db.session import get_db
 from app.models.hospital import Hospital, ToxicologyLab
+from app.models.user import User
+from app.models.ai_log import AnalysisLog
 from app.services.location_service import LocationService
+from app.core.security import get_current_user_required
 
 router = APIRouter(prefix="/hospitals", tags=["Hospitals"])
 
@@ -66,14 +72,197 @@ async def list_hospitals(
             "emergency_phone": h.emergency_phone,
             "address": h.address,
             "city": h.city,
+            "state": h.state,
             "is_24_hours": h.is_24_hours,
             "is_verified": h.is_verified,
-            "facilities": h.facilities,
+            "facilities": h.facilities or [],
+            "antidotes_available": h.antidotes_available or [],
+            "toxicology_tests": h.toxicology_tests or [],
             "latitude": h.latitude,
             "longitude": h.longitude
         }
         for h in hospitals
     ]
+
+
+# ─── Hospital Admin Endpoints ─────────────────────────────────────────────────
+# NOTE: These MUST be defined BEFORE /{hospital_id} to avoid path conflicts.
+
+
+class HospitalUpdateSchema(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    emergency_phone: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    is_24_hours: Optional[bool] = None
+    operating_hours: Optional[str] = None
+    facilities: Optional[List[str]] = None
+    antidotes_available: Optional[List[str]] = None
+    toxicology_tests: Optional[List[Any]] = None
+
+
+def _get_admin_hospital(db: Session, current_user: User) -> Hospital:
+    """Helper: get the hospital managed by the current admin user."""
+    if current_user.role != "hospital_admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Hospital admin privileges required")
+    hospital = db.query(Hospital).filter(Hospital.admin_id == current_user.id).first()
+    if not hospital:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No hospital associated with this account")
+    return hospital
+
+
+@router.get("/my-hospital")
+async def get_my_hospital(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_required),
+):
+    """Get full hospital details for the current admin."""
+    hospital = _get_admin_hospital(db, current_user)
+    return {
+        "id": hospital.id,
+        "name": hospital.name,
+        "type": hospital.hospital_type.value if hospital.hospital_type else None,
+        "registration_number": hospital.registration_number,
+        "phone": hospital.phone or "",
+        "emergency_phone": hospital.emergency_phone or "",
+        "email": hospital.email or "",
+        "website": hospital.website or "",
+        "address": hospital.address or "",
+        "city": hospital.city or "",
+        "state": hospital.state or "",
+        "is_24_hours": hospital.is_24_hours or False,
+        "operating_hours": hospital.operating_hours or "",
+        "facilities": hospital.facilities or [],
+        "antidotes_available": hospital.antidotes_available or [],
+        "toxicology_tests": hospital.toxicology_tests or [],
+        "is_verified": hospital.is_verified,
+        "latitude": hospital.latitude,
+        "longitude": hospital.longitude,
+    }
+
+
+@router.put("/my-hospital")
+async def update_my_hospital(
+    payload: HospitalUpdateSchema,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_required),
+):
+    """Update hospital information (hospital admin only)."""
+    hospital = _get_admin_hospital(db, current_user)
+
+    for field, value in payload.dict(exclude_unset=True).items():
+        if value is not None:
+            setattr(hospital, field, value)
+    hospital.updated_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(hospital)
+    return {"message": "Hospital updated successfully", "hospital_id": hospital.id}
+
+
+@router.get("/my-hospital/inventory")
+async def get_inventory(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_required),
+):
+    """Get the antidote inventory for the current admin's hospital."""
+    hospital = _get_admin_hospital(db, current_user)
+    return {
+        "hospital_id": hospital.id,
+        "hospital_name": hospital.name,
+        "antidotes_available": hospital.antidotes_available or [],
+        "toxicology_tests": hospital.toxicology_tests or [],
+        "facilities": hospital.facilities or [],
+    }
+
+
+@router.put("/my-hospital/inventory")
+async def update_inventory(
+    antidotes: Optional[List[str]] = Body(None),
+    toxicology_tests: Optional[List[Any]] = Body(None),
+    facilities: Optional[List[str]] = Body(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_required),
+):
+    """Update antidotes / tests / facilities inventory."""
+    hospital = _get_admin_hospital(db, current_user)
+
+    if antidotes is not None:
+        hospital.antidotes_available = antidotes
+    if toxicology_tests is not None:
+        hospital.toxicology_tests = toxicology_tests
+    if facilities is not None:
+        hospital.facilities = facilities
+    hospital.updated_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(hospital)
+    return {
+        "message": "Inventory updated successfully",
+        "antidotes_available": hospital.antidotes_available or [],
+        "toxicology_tests": hospital.toxicology_tests or [],
+        "facilities": hospital.facilities or [],
+    }
+
+
+@router.get("/my-hospital/reports")
+async def get_reports(
+    days: int = Query(30, description="Number of days to look back"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_required),
+):
+    """Get case reports and statistics for the hospital."""
+    hospital = _get_admin_hospital(db, current_user)
+
+    since = datetime.utcnow() - timedelta(days=days)
+
+    total_cases = db.query(AnalysisLog).filter(AnalysisLog.hospital_referred == True).count()
+
+    recent_cases = (
+        db.query(AnalysisLog)
+        .filter(AnalysisLog.hospital_referred == True, AnalysisLog.created_at >= since)
+        .order_by(AnalysisLog.created_at.desc())
+        .all()
+    )
+
+    # Severity breakdown
+    severity_counts: Dict[str, int] = {}
+    poison_counts: Dict[str, int] = {}
+    for c in recent_cases:
+        sev = c.severity_assessment or "unknown"
+        severity_counts[sev] = severity_counts.get(sev, 0) + 1
+        poison = c.predicted_poison or "unknown"
+        poison_counts[poison] = poison_counts.get(poison, 0) + 1
+
+    # Top 10 poisons
+    top_poisons = sorted(poison_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+
+    return {
+        "hospital_name": hospital.name,
+        "period_days": days,
+        "total_cases_all_time": total_cases,
+        "cases_in_period": len(recent_cases),
+        "severity_breakdown": severity_counts,
+        "top_poisons": [{"name": p, "count": c} for p, c in top_poisons],
+        "recent_cases": [
+            {
+                "id": c.id,
+                "predicted_poison": c.predicted_poison,
+                "severity": c.severity_assessment,
+                "antidote": c.antidote_suggested,
+                "date": c.created_at.isoformat(),
+            }
+            for c in recent_cases[:20]
+        ],
+    }
+
+
+# ─── Public Detail Endpoints ──────────────────────────────────────────────────
+
 
 @router.get("/{hospital_id}")
 async def get_hospital_details(

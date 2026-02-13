@@ -193,7 +193,7 @@ const TermsOfService = () => {
             <div className="contact-info">
               <p>📧 Email: legal@poisonsense.ai</p>
               <p>📞 Phone: +977-1-5123456</p>
-              <p>📍 Address: Maitidevi, Nepal</p>
+              <p>📍 Address: Kathmandu, Nepal</p>
             </div>
           </section>
         </div>

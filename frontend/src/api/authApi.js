@@ -80,6 +80,18 @@ export const authApi = {
   getStoredUser: () => {
     const user = localStorage.getItem('user');
     return user ? JSON.parse(user) : null;
+  },
+
+  // Upload license document after OTP verification
+  uploadLicense: async (email, licenseFile) => {
+    const formData = new FormData();
+    formData.append('email', email);
+    formData.append('license_file', licenseFile);
+    
+    const response = await api.post('/auth/upload-license', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
   }
 };
 

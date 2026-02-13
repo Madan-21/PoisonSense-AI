@@ -1,6 +1,7 @@
 # App entry point - Main FastAPI Application
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import os
 
@@ -11,22 +12,11 @@ from app.db.base import Base
 
 def check_and_seed_database():
     """Check if database needs seeding and seed if empty"""
-    from app.models.poison_center import PoisonCenter
-    
-    db = SessionLocal()
+    from app.db.init_db import init_database
     try:
-        # Check if database has any poison centers (indicates seeded)
-        center_count = db.query(PoisonCenter).count()
-        if center_count == 0:
-            print("📦 Empty database detected - seeding initial data...")
-            from app.db.init_db import init_database
-            db.close()  # Close before init_database creates its own session
-            init_database()
-            return
+        init_database()
     except Exception as e:
-        print(f"⚠️ Database check error: {e}")
-    finally:
-        db.close()
+        print(f"⚠️ Database seeding warning: {e}")
 
 # Create all database tables on startup
 @asynccontextmanager
@@ -41,9 +31,11 @@ async def lifespan(app: FastAPI):
     
     # Optionally preload ML model
     try:
-        from app.services.ml_service import ml_service
-        ml_service.load_model()
-        print("✅ ML Model loaded successfully")
+        # Temporarily disabled for debugging
+        print("📦 ML Model loading temporarily disabled for debugging")
+        # from app.services.ml_service import ml_service
+        # ml_service.load_model()
+        # print("✅ ML Model loaded successfully")
     except Exception as e:
         print(f"⚠️ ML Model not loaded: {e}")
     
@@ -84,6 +76,11 @@ app.add_middleware(
 
 # Include API routes
 app.include_router(api_router, prefix="/api/v1")
+
+# Serve uploaded license files statically
+uploads_dir = os.path.join(os.getcwd(), "uploads")
+os.makedirs(uploads_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 # Health check endpoint
 @app.get("/", tags=["Health"])

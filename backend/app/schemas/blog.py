@@ -70,8 +70,17 @@ class BlogSubmissionList(BaseModel):
     title: str
     category: str
     description: str
+    content: str
+    featured_image: Optional[str] = None
+    author_id: int
     author_name: str
+    author_email: str
     status: str
+    read_time: Optional[str] = None
+    view_count: int = 0
+    review_comment: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+    published_at: Optional[datetime] = None
     created_at: datetime
     
     model_config = {

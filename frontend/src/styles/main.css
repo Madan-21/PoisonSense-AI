@@ -10,8 +10,14 @@
 
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f8f9fa;
+  background-color: #ebf1f7;
   color: #333;
+}
+
+/* Loading Spinner Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* NAVBAR */
@@ -233,7 +239,6 @@ body {
   /* Ensure Samsung Internet 5.0+ uses a supported value */
   min-width: -webkit-fill-available;
   min-width: -moz-available;
-  min-width: fit-content;
 }
 
 .logo-image {
@@ -326,17 +331,24 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: 1200px;
+  max-width: 1400px;
   width: 100%;
-  padding: 0 50px;
+  padding: 2rem 50px;
   position: relative;
   z-index: 2;
-  gap: 3rem;
+  gap: 4rem;
+  margin: 0 auto;
 }
 
 .hero-left {
   flex: 1;
   color: #fff;
+  max-width: 600px;
+  z-index: 3;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .badge {
@@ -377,29 +389,36 @@ body {
   margin-bottom: 1.5rem;
 }
 
-.hero-title span {
-  background: linear-gradient(90deg, #4ade80, #22d3ee);
+.hero-title .gradient-text {
+  background: linear-gradient(90deg, #60a5fa, #3b82f6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  display: inline-block;
 }
 
 .hero-text {
-  font-size: 1.1rem;
-  line-height: 1.6;
+  font-size: 1.05rem;
+  line-height: 1.7;
   margin-bottom: 2rem;
-  opacity: 0.9;
-  max-width: 500px;
+  opacity: 0.95;
+  max-width: 520px;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .hero-buttons {
   display: flex;
+  flex-direction: column;
   gap: 1rem;
-  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.hero-buttons .btn {
+  min-width: 280px;
 }
 
 .btn {
-  padding: 12px 24px;
+  padding: 14px 28px;
   font-size: 1rem;
   font-weight: 600;
   border: none;
@@ -408,9 +427,11 @@ body {
   text-decoration: none;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   transition: all 0.3s ease;
   text-align: center;
+  white-space: nowrap;
 }
 
 .btn-red {
@@ -442,6 +463,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 3;
+  position: relative;
 }
 .glass-card {
   width: 100%;
@@ -1055,11 +1078,13 @@ body {
 
 /* CTA SECTION */
 .cta-section {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, #2159E2 0%, #1d4ed8 100%);
   padding: 4rem 2rem 2rem;
   text-align: center;
   margin: 0;
 }
+
+
 
 .cta-container {
   max-width: 800px;
@@ -1122,6 +1147,9 @@ body {
   background: #f0f9ff;
   transform: translateY(-3px);
   box-shadow: 0 8px 20px rgba(255, 255, 255, 0.3);
+}
+section.cta-section {
+  background: #2159E2 !important;
 }
 
 /* FOOTER */
@@ -1360,10 +1388,26 @@ body {
   .hero-wrap {
     flex-direction: column;
     padding: 2rem;
+    text-align: center;
+  }
+
+  .hero-left {
+    max-width: 100%;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
   }
 
   .hero-title {
     font-size: 2.5rem;
+  }
+
+  .hero-text {
+    max-width: 100%;
+  }
+
+  .hero-buttons {
+    justify-content: center;
   }
 
   .hero-right {
@@ -2084,19 +2128,36 @@ body {
 
 .static-page-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: #f8f9fa;
   padding-bottom: 60px;
 }
 
 .static-page-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 50%, #2d5a7b 100%);
   color: white;
   padding: 80px 20px;
   text-align: center;
+  position: relative;
+}
+
+.static-page-header::after {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, #4ade80, #22d3ee);
+  border-radius: 2px;
 }
 
 .static-page-header.warning-header {
   background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+}
+
+.static-page-header.warning-header::after {
+  background: linear-gradient(90deg, #fbbf24, #ef4444);
 }
 
 .static-page-header h1 {
@@ -2121,30 +2182,40 @@ body {
   max-width: 1200px;
   margin: -40px auto 0;
   padding: 0 20px;
+  position: relative;
+  z-index: 10;
 }
 
 .about-section,
 .policy-section {
   background: white;
   padding: 40px;
-  margin-bottom: 30px;
+  margin-bottom: 24px;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-left: 4px solid transparent;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.about-section:hover,
+.policy-section:hover {
+  border-left-color: #2d5a7b;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12);
 }
 
 .about-section h2,
 .policy-section h2 {
-  color: #667eea;
-  font-size: 2rem;
+  color: #0a1e3f;
+  font-size: 1.75rem;
   margin-bottom: 20px;
   padding-bottom: 15px;
-  border-bottom: 3px solid #667eea;
+  border-bottom: 3px solid #0a1e3f;
 }
 
 .about-section h3,
 .policy-section h3 {
-  color: #333;
-  font-size: 1.4rem;
+  color: #1a3a52;
+  font-size: 1.3rem;
   margin: 25px 0 15px;
 }
 
@@ -2163,17 +2234,19 @@ body {
   margin-top: 30px;
 }
 
-.feature-card {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+.static-page-content .feature-card {
+  background: linear-gradient(135deg, #f0f4f8 0%, #e8eef4 100%);
   padding: 30px;
   border-radius: 12px;
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid rgba(10, 30, 63, 0.06);
 }
 
-.feature-card:hover {
+.static-page-content .feature-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 8px 25px rgba(10, 30, 63, 0.15);
+  border-color: rgba(10, 30, 63, 0.12);
 }
 
 .feature-icon {
@@ -2182,15 +2255,15 @@ body {
   margin-bottom: 15px;
 }
 
-.feature-card h3 {
-  color: #667eea;
+.static-page-content .feature-card h3 {
+  color: #0a1e3f;
   margin-bottom: 10px;
   font-size: 1.2rem;
 }
 
-.feature-card p {
+.static-page-content .feature-card p {
   font-size: 0.95rem;
-  color: #666;
+  color: #555;
 }
 
 .feature-list,
@@ -2213,24 +2286,24 @@ body {
   border-bottom: none;
 }
 
-.cta-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.static-page-content .cta-section {
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 50%, #2d5a7b 100%);
   color: white;
   text-align: center;
 }
 
-.cta-section h2 {
+.static-page-content .cta-section h2 {
   color: white;
-  border-bottom: 3px solid white;
+  border-bottom: 3px solid rgba(255, 255, 255, 0.4);
 }
 
-.cta-section p {
+.static-page-content .cta-section p {
   color: white;
   opacity: 0.95;
   font-size: 1.1rem;
 }
 
-.cta-buttons {
+.static-page-content .cta-buttons {
   display: flex;
   gap: 20px;
   justify-content: center;
@@ -2238,7 +2311,7 @@ body {
   flex-wrap: wrap;
 }
 
-.cta-btn {
+.static-page-content .cta-btn {
   padding: 15px 35px;
   border-radius: 12px;
   font-size: 1.1rem;
@@ -2248,20 +2321,24 @@ body {
   display: inline-block;
 }
 
-.cta-btn.primary {
+.static-page-content .cta-btn.primary {
   background: white;
-  color: #667eea;
+  color: #0a1e3f;
 }
 
-.cta-btn.secondary {
-  background: rgba(255, 255, 255, 0.2);
+.static-page-content .cta-btn.primary:hover {
+  background: #f0f4f8;
+}
+
+.static-page-content .cta-btn.secondary {
+  background: rgba(255, 255, 255, 0.15);
   color: white;
-  border: 2px solid white;
+  border: 2px solid rgba(255, 255, 255, 0.6);
 }
 
-.cta-btn:hover {
+.static-page-content .cta-btn:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
 }
 
 /* Contact Support Styles */
@@ -2300,7 +2377,7 @@ body {
 }
 
 .contact-method h3 {
-  color: #667eea;
+  color: #0a1e3f;
   font-size: 1.2rem;
   margin-bottom: 5px;
 }
@@ -2367,7 +2444,7 @@ body {
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #2d5a7b;
 }
 
 .form-group textarea {
@@ -2378,7 +2455,7 @@ body {
 .submit-btn {
   width: 100%;
   padding: 15px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -2390,7 +2467,7 @@ body {
 
 .submit-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 25px rgba(10, 30, 63, 0.3);
 }
 
 .success-message {
@@ -2423,7 +2500,7 @@ body {
 }
 
 .faq-section h2 {
-  color: #667eea;
+  color: #0a1e3f;
   text-align: center;
   margin-bottom: 40px;
   font-size: 2rem;
@@ -2439,7 +2516,7 @@ body {
   padding: 25px;
   background: #f8f9fa;
   border-radius: 12px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #1a3a52;
 }
 
 .faq-item h3 {
@@ -2517,7 +2594,7 @@ body {
 }
 
 .step-number {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #2d5a7b 100%);
   color: white;
   width: 50px;
   height: 50px;
@@ -2531,7 +2608,7 @@ body {
 }
 
 .emergency-step h3 {
-  color: #667eea;
+  color: #0a1e3f;
   margin-bottom: 8px;
   font-size: 1.3rem;
 }
@@ -2616,8 +2693,8 @@ body {
 }
 
 .consent-section {
-  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
-  border-left: 5px solid #667eea;
+  background: linear-gradient(135deg, #e8eef4 0%, #d6e2ed 100%);
+  border-left: 5px solid #1a3a52;
 }
 
 .final-warning {
@@ -2721,7 +2798,7 @@ body {
 
 .findhelp-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: #87ceeb;
 }
 
 .findhelp-hero {
@@ -2764,7 +2841,7 @@ body {
 }
 
 .status-icon {
-  font-size: 3rem;
+  font-size: 1.5rem;
   flex-shrink: 0;
 }
 
@@ -2919,7 +2996,7 @@ body {
 .hospitals-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 18px;
+  gap: 12px;
 }
 
 .hospital-card-page {
@@ -2929,6 +3006,8 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 2px solid #e5e7eb;
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .hospital-card-page:hover {
@@ -2962,6 +3041,7 @@ body {
 
 .card-body {
   padding: 18px;
+  flex: 1;
 }
 
 .card-body h3 {
@@ -2973,13 +3053,13 @@ body {
 }
 
 .hospital-info {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .info-item {
   display: flex;
-  gap: 8px;
-  margin-bottom: 9px;
+  gap: 6px;
+  margin-bottom: 6px;
   font-size: 0.88rem;
   line-height: 1.4;
 }
@@ -3063,6 +3143,7 @@ body {
   max-width: 1200px;
   margin: 20px auto;
   padding: 0 20px;
+  text-align: center;
 }
 
 .emergency-numbers-section h3 {
@@ -3131,7 +3212,7 @@ body {
   }
 
   .status-icon {
-    font-size: 2.5rem;
+    font-size: 1.2rem;
   }
 
   .status-text h3 {

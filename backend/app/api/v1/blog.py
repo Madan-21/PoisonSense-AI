@@ -76,15 +76,15 @@ async def get_all_submissions(
     current_user: User = Depends(get_current_user_required)
 ):
     """
-    Get all blog submissions (admin only).
+    Get all blog submissions (admin and blog_reviewer only).
     
     - **status_filter**: Optional filter by status (pending, approved, rejected)
     """
-    # Check if user is admin
-    if current_user.role != "admin":
+    # Check if user is admin or blog_reviewer
+    if current_user.role not in ["admin", "blog_reviewer"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can view all submissions"
+            detail="Only admins and blog reviewers can view all submissions"
         )
     
     query = db.query(BlogSubmission)
@@ -144,15 +144,15 @@ async def approve_submission(
     current_user: User = Depends(get_current_user_required)
 ):
     """
-    Approve a blog submission (admin only).
+    Approve a blog submission (admin and blog_reviewer only).
     
     - **comment**: Optional review comment
     """
-    # Check if user is admin
-    if current_user.role != "admin":
+    # Check if user is admin or blog_reviewer
+    if current_user.role not in ["admin", "blog_reviewer"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can approve submissions"
+            detail="Only admins and blog reviewers can approve submissions"
         )
     
     submission = db.query(BlogSubmission).filter(
@@ -191,15 +191,15 @@ async def reject_submission(
     current_user: User = Depends(get_current_user_required)
 ):
     """
-    Reject a blog submission (admin only).
+    Reject a blog submission (admin and blog_reviewer only).
     
     - **comment**: Optional review comment explaining rejection
     """
-    # Check if user is admin
-    if current_user.role != "admin":
+    # Check if user is admin or blog_reviewer
+    if current_user.role not in ["admin", "blog_reviewer"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can reject submissions"
+            detail="Only admins and blog reviewers can reject submissions"
         )
     
     submission = db.query(BlogSubmission).filter(

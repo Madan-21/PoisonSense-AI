@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import api from "../api/axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import BlogCommunity from "../components/BlogCommunity";
 import "../styles/BlogDetail.css";
 
 const BlogDetail = () => {
@@ -16,32 +18,29 @@ const BlogDetail = () => {
     const fetchArticle = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/v1/blog/articles/${id}`);
-        
-        if (response.ok) {
-          const data = await response.json();
-          // Map API fields to component expected fields
-          const mappedArticle = {
-            ...data,
-            author: data.author_name,
-            date: new Date(data.published_at).toLocaleDateString('en-US', {
-              month: 'long',
-              year: 'numeric'
-            }),
-            readTime: data.read_time || '5 min read',
-            image: data.featured_image || '/images/default-article.jpg',
-            inlineImage: data.featured_image || '/images/default-article.jpg',
-            source: 'PoisonSense AI Community'
-          };
-          setArticle(mappedArticle);
-        } else if (response.status === 404) {
+        const response = await api.get(`/blog/articles/${id}`);
+        const data = response.data;
+        // Map API fields to component expected fields
+        const mappedArticle = {
+          ...data,
+          author: data.author_name,
+          date: new Date(data.published_at).toLocaleDateString('en-US', {
+            month: 'long',
+            year: 'numeric'
+          }),
+          readTime: data.read_time || '5 min read',
+          image: data.featured_image || '/images/default-article.jpg',
+          inlineImage: data.featured_image || '/images/default-article.jpg',
+          source: 'PoisonSense AI Community'
+        };
+        setArticle(mappedArticle);
+      } catch (err) {
+        console.error("Error fetching article:", err);
+        if (err.response?.status === 404) {
           setError("Article not found");
         } else {
           setError("Failed to load article");
         }
-      } catch (err) {
-        console.error("Error fetching article:", err);
-        setError("Failed to load article");
       } finally {
         setLoading(false);
       }
@@ -143,6 +142,9 @@ const BlogDetail = () => {
                   ),
               )}
             </div>
+
+            {/* Blog Community - Comments and Likes */}
+            <BlogCommunity articleId={parseInt(id)} />
 
             <div className="article-footer">
               <Link to="/blog" className="btn btn-secondary">

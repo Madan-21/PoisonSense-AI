@@ -22,10 +22,10 @@
     max-width: 520px;
     grid-template-columns: 1fr;
 }
-/* Login css */
+
 /* LEFT PANEL */
 .login-left {
-    position: relative; 
+    position: relative;
     min-height: 560px;
 }
 

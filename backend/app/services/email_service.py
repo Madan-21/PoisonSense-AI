@@ -167,10 +167,10 @@ async def send_verification_email(email: str, full_name: str) -> tuple[bool, str
     
     # Check if SMTP is configured
     if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
-        # Development mode - return OTP directly
+        # Development mode - still generate OTP but don't show it
         otp = generate_otp()
         store_otp(email, otp)
-        return True, f"DEV_MODE: Your OTP is {otp} (Email not configured)"
+        return False, "Email service not configured. Please contact administrator to set up SMTP settings for email verification. Your account will be reviewed and verified within 24 hours."
     
     try:
         # Generate OTP
@@ -196,7 +196,7 @@ async def send_verification_email(email: str, full_name: str) -> tuple[bool, str
             server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
             server.sendmail(settings.SMTP_USER, email, msg.as_string())
         
-        return True, "Verification code sent to your email!"
+        return True, "Verification code sent to your email! Please check your inbox and spam folder."
         
     except smtplib.SMTPAuthenticationError:
         return False, "Email service authentication failed. Please contact support."
@@ -206,7 +206,7 @@ async def send_verification_email(email: str, full_name: str) -> tuple[bool, str
         return False, f"An error occurred: {str(e)}"
 
 async def send_welcome_email(email: str, full_name: str) -> tuple[bool, str]:
-    """Send welcome email after successful verification"""
+    """Send welcome email after successful OTP verification (account still pending admin approval)"""
     
     if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
         return True, "Welcome email skipped (Email not configured)"
@@ -217,25 +217,29 @@ async def send_welcome_email(email: str, full_name: str) -> tuple[bool, str]:
         <html>
         <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; margin: 0; padding: 40px;">
             <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 40px; text-align: center;">
-                    <h1 style="color: #ffffff; margin: 0;">✅ Welcome to PoisonSense AI!</h1>
+                <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 40px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0;">⏳ PoisonSense AI - Account Under Review</h1>
                 </div>
                 <div style="padding: 40px;">
-                    <h2 style="color: #333;">Hello {full_name}! 🎉</h2>
+                    <h2 style="color: #333;">Hello {full_name}! 👋</h2>
                     <p style="color: #666; line-height: 1.6;">
-                        Your email has been verified successfully! You now have full access to PoisonSense AI.
+                        Your email has been verified successfully! Your account is now <strong>pending admin approval</strong>.
                     </p>
-                    <div style="background: #e8f5e9; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                        <h3 style="color: #2e7d32; margin-top: 0;">What you can do now:</h3>
-                        <ul style="color: #2e7d32; line-height: 1.8;">
-                            <li>🤖 Use AI-powered poison identification</li>
-                            <li>🏥 Find nearest hospitals & poison centers</li>
-                            <li>📋 Access emergency first-aid protocols</li>
-                            <li>📞 Quick-dial emergency services</li>
+                    <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                        <h3 style="color: #856404; margin-top: 0;">⏳ What happens next?</h3>
+                        <ul style="color: #856404; line-height: 1.8;">
+                            <li>Our admin team will review your registration details</li>
+                            <li>This typically takes <strong>24-48 hours</strong></li>
+                            <li>You will receive an email once your account is approved</li>
+                            <li>After approval, you can log in and access all features</li>
                         </ul>
                     </div>
+                    <p style="color: #666; line-height: 1.6;">
+                        Please do <strong>not</strong> try to log in until you receive the approval notification. 
+                        If you have any questions, contact our support team.
+                    </p>
                     <p style="color: #999; font-size: 14px;">
-                        Stay safe! The PoisonSense AI Team
+                        Thank you for your patience! — The PoisonSense AI Team
                     </p>
                 </div>
             </div>
@@ -244,7 +248,7 @@ async def send_welcome_email(email: str, full_name: str) -> tuple[bool, str]:
         """
         
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = "✅ Welcome to PoisonSense AI - Account Verified!"
+        msg["Subject"] = "⏳ PoisonSense AI - Account Under Review"
         msg["From"] = f"{settings.EMAIL_FROM_NAME} <{settings.SMTP_USER}>"
         msg["To"] = email
         
@@ -260,3 +264,167 @@ async def send_welcome_email(email: str, full_name: str) -> tuple[bool, str]:
     except Exception as e:
         # Don't fail registration if welcome email fails
         return True, f"Welcome email failed but registration complete: {str(e)}"
+
+
+async def send_approval_email(email: str, full_name: str) -> tuple[bool, str]:
+    """Send email notification when admin approves a user account"""
+    
+    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+        return True, "Approval email skipped (Email not configured)"
+    
+    try:
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; margin: 0; padding: 40px;">
+            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 40px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0;">✅ Account Approved!</h1>
+                    <p style="color: #ffffff; opacity: 0.9; margin: 10px 0 0 0;">PoisonSense AI</p>
+                </div>
+                <div style="padding: 40px;">
+                    <h2 style="color: #333;">Hello {full_name}! 🎉</h2>
+                    <p style="color: #666; line-height: 1.6;">
+                        Great news! Your <strong>PoisonSense AI</strong> account has been reviewed and <strong style="color: #16a34a;">approved</strong> by our admin team.
+                    </p>
+                    <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+                        <h3 style="color: #166534; margin-top: 0;">🚀 You can now log in!</h3>
+                        <p style="color: #166534; margin-bottom: 0;">
+                            Visit PoisonSense AI and sign in with your registered email and password to access all features.
+                        </p>
+                    </div>
+                    <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin-top: 20px;">
+                        <h3 style="color: #333; margin-top: 0;">🏥 What you can do now:</h3>
+                        <ul style="color: #666; line-height: 1.8; padding-left: 20px;">
+                            <li>Get instant poison identification from symptoms</li>
+                            <li>Find nearest emergency services</li>
+                            <li>Access first-aid protocols</li>
+                            <li>Contact poison control centers 24/7</li>
+                            <li>Use AI-powered analysis tools</li>
+                        </ul>
+                    </div>
+                    <p style="color: #999; font-size: 14px; margin-top: 30px;">
+                        Thank you for joining PoisonSense AI! — The PoisonSense AI Team
+                    </p>
+                </div>
+                <div style="padding: 20px 40px; background-color: #f8f9fa; text-align: center; border-top: 1px solid #e5e7eb;">
+                    <p style="margin: 0; color: #999; font-size: 12px;">
+                        © 2026 PoisonSense AI. All rights reserved.
+                    </p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = "✅ PoisonSense AI - Your Account Has Been Approved!"
+        msg["From"] = f"{settings.EMAIL_FROM_NAME} <{settings.SMTP_USER}>"
+        msg["To"] = email
+        
+        # Plain text version
+        text_content = f"""
+PoisonSense AI - Account Approved!
+
+Hello {full_name}!
+
+Great news! Your PoisonSense AI account has been approved by our admin team.
+
+You can now log in with your registered email and password to access all features.
+
+Thank you for joining PoisonSense AI!
+— The PoisonSense AI Team
+        """
+        
+        msg.attach(MIMEText(text_content, "plain"))
+        msg.attach(MIMEText(html_content, "html"))
+        
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+            server.starttls()
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            server.sendmail(settings.SMTP_USER, email, msg.as_string())
+        
+        return True, "Approval email sent!"
+        
+    except Exception as e:
+        # Don't fail approval if email fails
+        return False, f"Approval email failed: {str(e)}"
+
+
+async def send_rejection_email(email: str, full_name: str) -> tuple[bool, str]:
+    """Send email notification when admin rejects a user account"""
+    
+    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+        return True, "Rejection email skipped (Email not configured)"
+    
+    try:
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; margin: 0; padding: 40px;">
+            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 40px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0;">❌ Account Not Approved</h1>
+                    <p style="color: #ffffff; opacity: 0.9; margin: 10px 0 0 0;">PoisonSense AI</p>
+                </div>
+                <div style="padding: 40px;">
+                    <h2 style="color: #333;">Hello {full_name},</h2>
+                    <p style="color: #666; line-height: 1.6;">
+                        We regret to inform you that your <strong>PoisonSense AI</strong> account registration has <strong style="color: #dc2626;">not been approved</strong> after review by our admin team.
+                    </p>
+                    <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                        <h3 style="color: #991b1b; margin-top: 0;">Possible reasons:</h3>
+                        <ul style="color: #991b1b; line-height: 1.8; padding-left: 20px;">
+                            <li>Incomplete or invalid registration documents</li>
+                            <li>Unable to verify professional credentials</li>
+                            <li>Missing or unclear license document</li>
+                        </ul>
+                    </div>
+                    <p style="color: #666; line-height: 1.6;">
+                        If you believe this was a mistake, you may register again with valid documentation or contact our support team for assistance.
+                    </p>
+                    <p style="color: #999; font-size: 14px; margin-top: 30px;">
+                        — The PoisonSense AI Team
+                    </p>
+                </div>
+                <div style="padding: 20px 40px; background-color: #f8f9fa; text-align: center; border-top: 1px solid #e5e7eb;">
+                    <p style="margin: 0; color: #999; font-size: 12px;">
+                        © 2026 PoisonSense AI. All rights reserved.
+                    </p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = "❌ PoisonSense AI - Account Registration Update"
+        msg["From"] = f"{settings.EMAIL_FROM_NAME} <{settings.SMTP_USER}>"
+        msg["To"] = email
+        
+        # Plain text version
+        text_content = f"""
+PoisonSense AI - Account Not Approved
+
+Hello {full_name},
+
+We regret to inform you that your PoisonSense AI account registration has not been approved after review by our admin team.
+
+If you believe this was a mistake, you may register again with valid documentation or contact our support team for assistance.
+
+— The PoisonSense AI Team
+        """
+        
+        msg.attach(MIMEText(text_content, "plain"))
+        msg.attach(MIMEText(html_content, "html"))
+        
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+            server.starttls()
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            server.sendmail(settings.SMTP_USER, email, msg.as_string())
+        
+        return True, "Rejection email sent!"
+        
+    except Exception as e:
+        # Don't fail rejection if email fails
+        return False, f"Rejection email failed: {str(e)}"

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import api from "../api/axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { formatErrorMessage } from "../utils/errorHandler";
@@ -97,11 +98,14 @@ const SubmitArticle = () => {
   const validateForm = () => {
     const newErrors = {};
     if (!formData.title.trim()) newErrors.title = "Title is required";
+    else if (formData.title.trim().length < 10) newErrors.title = "Title must be at least 10 characters";
     if (!formData.category) newErrors.category = "Category is required";
     if (!formData.description.trim())
       newErrors.description = "Description is required";
-    if (formData.description.length > 200)
-      newErrors.description = "Description must be 200 characters or less";
+    else if (formData.description.length < 50)
+      newErrors.description = "Description must be at least 50 characters";
+    else if (formData.description.length > 500)
+      newErrors.description = "Description must be 500 characters or less";
     if (!formData.content.trim()) newErrors.content = "Content is required";
     if (formData.content.length < 100)
       newErrors.content = "Content must be at least 100 characters";
@@ -144,44 +148,10 @@ const SubmitArticle = () => {
 
       console.log("Submitting to backend:", submissionData);
 
-      // Get auth token
-      const token = localStorage.getItem("access_token");
-      
-      // Submit to backend
-      const response = await fetch("/api/v1/blog/submissions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(submissionData)
-      });
+      // Submit to backend using axios api instance (handles auth token automatically)
+      const response = await api.post("/blog/submissions", submissionData);
 
-      console.log("Response status:", response.status);
-      console.log("Response headers:", response.headers);
-
-      // Handle response
-      let result = null;
-      try {
-        result = await response.json();
-      } catch (e) {
-        console.warn("Could not parse JSON response:", e);
-        // If status is ok but no JSON, treat as success
-        if (response.ok) {
-          result = { success: true };
-        } else {
-          throw new Error(`Server error: ${response.status} ${response.statusText}`);
-        }
-      }
-
-      if (!response.ok) {
-        const errorMsg = formatErrorMessage(result?.detail || result?.message || "Failed to submit article");
-        console.error("Backend error:", errorMsg);
-        setErrors({ submit: errorMsg });
-        return;
-      }
-
-      console.log("Backend response:", result);
+      console.log("Backend response:", response.data);
       
       // Show success modal
       setSubmitted(true);
@@ -193,10 +163,19 @@ const SubmitArticle = () => {
     } catch (error) {
       console.error("Submission error:", error);
       
-      // Check if it's a network error or backend not running
-      if (error.message.includes("Failed to fetch")) {
+      if (error.response) {
+        // Server responded with an error
+        const detail = error.response.data?.detail;
+        const errorMsg = formatErrorMessage(
+          typeof detail === 'string' ? detail :
+          Array.isArray(detail) ? detail.map(e => e.msg || e.message || JSON.stringify(e)).join('; ') :
+          detail?.message || "Failed to submit article"
+        );
+        setErrors({ submit: errorMsg });
+      } else if (error.request) {
+        // Network error
         setErrors({ 
-          submit: "⚠️ Backend server is not running. Please ensure the backend is started at http://localhost:8000" 
+          submit: "⚠️ Cannot connect to server. Please ensure the backend is running." 
         });
       } else {
         setErrors({ submit: "Error: " + error.message });
@@ -232,16 +211,20 @@ const SubmitArticle = () => {
               <h2>Article Details</h2>
 
               <div className="form-group">
-                <label htmlFor="title">Article Title *</label>
+                <label htmlFor="title">Article Title * <small>(10-255 characters)</small></label>
                 <input
                   type="text"
                   id="title"
                   name="title"
-                  placeholder="Enter a compelling title"
+                  placeholder="Enter a compelling title (minimum 10 characters)"
                   value={formData.title}
                   onChange={handleChange}
+                  maxLength={255}
                   className={errors.title ? "error" : ""}
                 />
+                <span className="char-count">
+                  {formData.title.length}/255 characters {formData.title.length > 0 && formData.title.length < 10 ? `(need ${10 - formData.title.length} more)` : ""}
+                </span>
                 {errors.title && (
                   <span className="error-message">{errors.title}</span>
                 )}
@@ -270,19 +253,19 @@ const SubmitArticle = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="description">Short Excerpt *</label>
+                <label htmlFor="description">Short Excerpt * <small>(50-500 characters)</small></label>
                 <textarea
                   id="description"
                   name="description"
-                  placeholder="Brief summary of your article (max 200 characters)"
+                  placeholder="Brief summary of your article (50-500 characters)"
                   value={formData.description}
                   onChange={handleChange}
-                  maxLength="200"
+                  maxLength="500"
                   rows="3"
                   className={errors.description ? "error" : ""}
                 />
                 <span className="char-count">
-                  {formData.description.length}/200 characters
+                  {formData.description.length}/500 characters {formData.description.length < 50 && formData.description.length > 0 ? `(need ${50 - formData.description.length} more)` : ""}
                 </span>
                 {errors.description && (
                   <span className="error-message">{errors.description}</span>

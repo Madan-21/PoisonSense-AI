@@ -32,7 +32,7 @@ export default function Dashboard() {
         alignItems: "center",
         justifyContent: "center",
         minHeight: "60vh",
-        padding: "3rem",
+        padding: "2rem",
         textAlign: "center",
         background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
       }}>

@@ -113,6 +113,13 @@ class UserSignup(BaseModel):
     password: str = Field(..., min_length=8)
     full_name: str = Field(..., min_length=2, max_length=255)
     phone: Optional[str] = None
+    role: Optional[str] = "patient"  # patient, doctor, hospital_admin
+    
+    # Professional fields (for doctors/hospitals)
+    registration_number: Optional[str] = None  # Medical reg no. or hospital reg no.
+    specialization: Optional[str] = None  # Doctor specialization or hospital department
+    experience_years: Optional[int] = None  # Doctor experience
+    hospital_address: Optional[str] = None  # Hospital address
     
     @field_validator('email')
     @classmethod

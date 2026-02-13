@@ -60,10 +60,16 @@ export const AuthProvider = ({ children }) => {
       setPendingVerification(null);
       return response;
     } catch (err) {
-      // Check if email verification is required
-      if (err.response?.status === 403 && err.response?.data?.detail?.includes('not verified')) {
+      // Check if email verification is required (not admin approval)
+      if (err.response?.status === 403 && 
+          err.response?.data?.detail?.includes('not verified') &&
+          !err.response?.data?.detail?.includes('pending admin approval')) {
         setPendingVerification({ email, message: err.response.data.detail });
         throw new Error('Email verification required');
+      }
+      // For pending admin approval, just throw the error with the original message
+      if (err.response?.status === 403 && err.response?.data?.detail?.includes('pending admin approval')) {
+        throw err;
       }
       setError(err.message);
       throw err;
@@ -92,8 +98,12 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const response = await authApi.verifyOTP(email, otp);
-      if (response.verified && response.user) {
+      // Only set user if access token is provided (no admin approval needed)
+      if (response.verified && response.access_token && response.user) {
         setUser(response.user);
+        setPendingVerification(null);
+      } else if (response.verified && !response.access_token) {
+        // Admin approval required - don't set user
         setPendingVerification(null);
       }
       return response;
@@ -120,26 +130,15 @@ export const AuthProvider = ({ children }) => {
     setPendingVerification(null);
   };
 
-  // logout
-  const logout = () => {
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("user");
-  setUser(null);
-
-  // ❌ DO NOT navigate to /login here
-  // Let Profile.jsx handle redirect
-};
-
-
-  // // Logout function
-  // const logout = async () => {
-  //   try {
-  //     await authApi.logout();
-  //   } finally {
-  //     setUser(null);
-  //     setPendingVerification(null);
-  //   }
-  // };
+  // Logout function
+  const logout = async () => {
+    try {
+      await authApi.logout();
+    } finally {
+      setUser(null);
+      setPendingVerification(null);
+    }
+  };
 
   // Refresh user data
   const refreshUser = async () => {
@@ -149,6 +148,17 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(currentUser));
     } catch (err) {
       console.error('Failed to refresh user:', err);
+    }
+  };
+
+  // Upload license document
+  const uploadLicense = async (email, licenseFile) => {
+    try {
+      const response = await authApi.uploadLicense(email, licenseFile);
+      return response;
+    } catch (err) {
+      console.error('License upload failed:', err);
+      throw err;
     }
   };
 
@@ -162,6 +172,7 @@ export const AuthProvider = ({ children }) => {
     signup,
     verifyOTP,
     resendOTP,
+    uploadLicense,
     clearPendingVerification,
     logout,
     refreshUser,
