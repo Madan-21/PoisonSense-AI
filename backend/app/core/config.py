@@ -82,7 +82,12 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
     
     # CORS
-    CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
+    CORS_ORIGINS: list = [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:3000",
+        "https://madan-21.github.io",
+    ]
     
     # ML Model paths
     ML_MODEL_PATH: str = "app/ml/models"
