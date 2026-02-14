@@ -1,13 +1,30 @@
 # ML Prediction Service - Integrates the DistilBERT model
 import os
-import torch
-import pandas as pd
 from typing import Dict, List, Optional, Tuple
-from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
-from sklearn.preprocessing import LabelEncoder
 import pickle
 from datetime import datetime
 from app.core.config import settings
+
+# Heavy imports (torch, transformers, sklearn) are loaded lazily
+# to avoid blocking the server startup on Render free tier.
+_torch = None
+_pd = None
+_DistilBertTokenizer = None
+_DistilBertForSequenceClassification = None
+_LabelEncoder = None
+
+def _load_heavy_deps():
+    global _torch, _pd, _DistilBertTokenizer, _DistilBertForSequenceClassification, _LabelEncoder
+    if _torch is None:
+        import torch
+        import pandas as pd
+        from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
+        from sklearn.preprocessing import LabelEncoder
+        _torch = torch
+        _pd = pd
+        _DistilBertTokenizer = DistilBertTokenizer
+        _DistilBertForSequenceClassification = DistilBertForSequenceClassification
+        _LabelEncoder = LabelEncoder
 
 class PoisonMLService:
     """Service for ML-based poison prediction using DistilBERT"""
@@ -28,7 +45,7 @@ class PoisonMLService:
         self.tokenizer = None
         self.label_encoder = None
         self.df = None  # Dataset for additional info
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = None  # Set lazily when model is loaded
         self.model_loaded = False
         
         # Paths
@@ -41,11 +58,14 @@ class PoisonMLService:
     def load_model(self) -> bool:
         """Load the trained model, tokenizer, and label encoder"""
         try:
+            _load_heavy_deps()
+            self.device = 'cuda' if _torch.cuda.is_available() else 'cpu'
+            
             # Check if saved model exists
             if os.path.exists(self.model_path):
                 print(f"Loading saved model from {self.model_path}")
-                self.model = DistilBertForSequenceClassification.from_pretrained(self.model_path)
-                self.tokenizer = DistilBertTokenizer.from_pretrained(self.model_path)
+                self.model = _DistilBertForSequenceClassification.from_pretrained(self.model_path)
+                self.tokenizer = _DistilBertTokenizer.from_pretrained(self.model_path)
                 
                 # Load label encoder
                 if os.path.exists(self.encoder_path):
@@ -54,29 +74,29 @@ class PoisonMLService:
             else:
                 # Load base model (will need training)
                 print("Loading base DistilBERT model...")
-                self.tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
+                self.tokenizer = _DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
                 
                 # Try to load dataset to get number of labels
                 if os.path.exists(self.dataset_path):
-                    self.df = pd.read_csv(self.dataset_path)
-                    self.label_encoder = LabelEncoder()
+                    self.df = _pd.read_csv(self.dataset_path)
+                    self.label_encoder = _LabelEncoder()
                     self.label_encoder.fit(self.df['poison_name'])
                     num_labels = len(self.label_encoder.classes_)
                     
-                    self.model = DistilBertForSequenceClassification.from_pretrained(
+                    self.model = _DistilBertForSequenceClassification.from_pretrained(
                         'distilbert-base-uncased', 
                         num_labels=num_labels
                     )
                 else:
                     print("Warning: Dataset not found, using default 10 labels")
-                    self.model = DistilBertForSequenceClassification.from_pretrained(
+                    self.model = _DistilBertForSequenceClassification.from_pretrained(
                         'distilbert-base-uncased', 
                         num_labels=10
                     )
             
             # Load dataset for additional info lookup
             if os.path.exists(self.dataset_path) and self.df is None:
-                self.df = pd.read_csv(self.dataset_path)
+                self.df = _pd.read_csv(self.dataset_path)
             
             self.model.to(self.device)
             self.model.eval()
@@ -113,13 +133,13 @@ class PoisonMLService:
             tokens = {k: v.to(self.device) for k, v in tokens.items()}
             
             # Get prediction
-            with torch.no_grad():
+            with _torch.no_grad():
                 outputs = self.model(**tokens)
                 logits = outputs.logits
-                probabilities = torch.softmax(logits, dim=1)
+                probabilities = _torch.softmax(logits, dim=1)
                 
                 # Get top predictions
-                top_probs, top_indices = torch.topk(probabilities, min(5, probabilities.shape[1]))
+                top_probs, top_indices = _torch.topk(probabilities, min(5, probabilities.shape[1]))
                 top_probs = top_probs.cpu().numpy()[0]
                 top_indices = top_indices.cpu().numpy()[0]
             
@@ -187,7 +207,7 @@ class PoisonMLService:
         """Get information about the loaded model"""
         return {
             "loaded": self.model_loaded,
-            "device": self.device,
+            "device": self.device or "not_initialized",
             "model_type": "DistilBERT for Sequence Classification",
             "num_labels": len(self.label_encoder.classes_) if self.label_encoder else None,
             "dataset_loaded": self.df is not None,

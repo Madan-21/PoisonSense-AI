@@ -18,6 +18,7 @@ def patch_chromadb():
     pydantic.v1.fields to handle the missing annotation gracefully.
     """
     if sys.version_info < (3, 14):
+        print("⏭️ ChromaDB patch not needed (Python < 3.14)")
         return True  # no patch needed
 
     try:
