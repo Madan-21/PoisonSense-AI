@@ -33,6 +33,7 @@ def auto_ingest_pdfs():
 
     def _ingest():
         try:
+            import gc
             import traceback
             from rag.vector_store import get_collection_stats
             from rag.ingest import ingest_pdf
@@ -56,21 +57,28 @@ def auto_ingest_pdfs():
                 print("📭 No PDFs found in rag/pdf_uploads/ for auto-ingestion")
                 return
 
-            print(f"📥 Auto-ingesting {len(pdfs)} PDFs one-by-one into '{DEFAULT_COLLECTION}' ...")
+            print(f"📥 Auto-ingesting {len(pdfs)} PDFs into '{DEFAULT_COLLECTION}' ...")
             ok = 0
             for i, pdf in enumerate(pdfs, 1):
                 try:
-                    print(f"  [{i}/{len(pdfs)}] Ingesting {pdf.name} ({pdf.stat().st_size // 1024}KB)...")
+                    size_kb = pdf.stat().st_size // 1024
+                    print(f"  [{i}/{len(pdfs)}] {pdf.name} ({size_kb}KB)...")
                     result = ingest_pdf(str(pdf), DEFAULT_COLLECTION)
                     if "error" not in result:
                         ok += 1
-                        print(f"    ✓ {result.get('chunks', '?')} chunks")
+                        print(f"    ✓ {result.get('chunks_created', '?')} chunks")
                     else:
                         print(f"    ✗ {result['error']}")
                 except Exception as e:
                     print(f"    ✗ Exception: {e}")
                     traceback.print_exc()
+                finally:
+                    gc.collect()  # free memory between PDFs
+
             print(f"✅ Auto-ingest complete: {ok}/{len(pdfs)} PDFs ingested")
+            # Final stats
+            stats = get_collection_stats()
+            print(f"   Collections: {stats}")
         except Exception as e:
             import traceback
             print(f"⚠️ Auto-ingest failed (non-fatal): {e}")

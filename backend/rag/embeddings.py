@@ -30,7 +30,14 @@ def embed_texts(texts: List[str]) -> List[List[float]]:
         return [d.embedding for d in resp.data]
     else:
         model = _get_local_model()
-        return model.encode(texts, show_progress_bar=False).tolist()
+        # Process in small batches to limit peak memory on free-tier hosts
+        batch_size = 32
+        all_embeddings = []
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i : i + batch_size]
+            embs = model.encode(batch, show_progress_bar=False).tolist()
+            all_embeddings.extend(embs)
+        return all_embeddings
 
 
 def embed_query(text: str) -> List[float]:
