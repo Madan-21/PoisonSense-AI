@@ -1,0 +1,229 @@
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import asset from "../utils/asset";
+
+// SVG Icons matching Figma design
+const HomeIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+  </svg>
+);
+
+const ChatIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="14" rx="2" ry="2"></rect>
+    <line x1="7" y1="8" x2="17" y2="8"></line>
+    <line x1="7" y1="12" x2="13" y2="12"></line>
+  </svg>
+);
+
+const ActivityIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+  </svg>
+);
+
+const MapPinIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+    <circle cx="12" cy="10" r="3"></circle>
+  </svg>
+);
+
+const UserIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+    <circle cx="12" cy="7" r="4"></circle>
+  </svg>
+);
+
+const PhoneIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+  </svg>
+);
+
+const PillIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10.5 20.5L3.5 13.5C2.1 12.1 2.1 9.9 3.5 8.5L8.5 3.5C9.9 2.1 12.1 2.1 13.5 3.5L20.5 10.5C21.9 11.9 21.9 14.1 20.5 15.5L15.5 20.5C14.1 21.9 11.9 21.9 10.5 20.5Z"></path>
+    <path d="M8.5 8.5L15.5 15.5"></path>
+  </svg>
+);
+
+const BookIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+  </svg>
+);
+
+const ShieldIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+  </svg>
+);
+
+export default function Navbar() {
+  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  const { user, logout } = useAuth();
+
+  const isActive = (path) => location.pathname === path;
+
+  return (
+    <nav className="navbar-new">
+      <div className="navbar-container-new">
+        <Link to="/" className="navbar-logo-new">
+          <img
+            src={asset("/images/logo.jpg")}
+            alt="PoisonSense AI Logo"
+            className="logo-image-new"
+          />
+          <span>PoisonSense AI</span>
+        </Link>
+        
+        <div className="menu-icon-new" onClick={() => setIsOpen(!isOpen)}>
+          {isOpen ? "✕" : "☰"}
+        </div>
+        
+        <ul className={isOpen ? "nav-menu-new active" : "nav-menu-new"}>
+          <li className="nav-item-new">
+            <Link to="/" className={`nav-link-new ${isActive('/') ? 'active' : ''}`} onClick={() => setIsOpen(false)}>
+              <HomeIcon />
+              Home
+            </Link>
+          </li>
+          {user && (
+            <li className="nav-item-new">
+              <Link
+                to="/ai-assistant"
+                className={`nav-link-new ${isActive('/ai-assistant') ? 'active' : ''}`}
+                onClick={() => setIsOpen(false)}
+              >
+                <ChatIcon />
+                AI Assistant
+              </Link>
+            </li>
+          )}
+          <li className="nav-item-new">
+            <Link
+              to="/find-help"
+              className={`nav-link-new ${isActive('/find-help') ? 'active' : ''}`}
+              onClick={() => setIsOpen(false)}
+            >
+              <MapPinIcon />
+              Find Help
+            </Link>
+          </li>
+          <li className="nav-item-new">
+            <Link
+              to="/poison-management"
+              className={`nav-link-new ${isActive('/poison-management') || isActive('/antidotes') ? 'active' : ''}`}
+              onClick={() => setIsOpen(false)}
+            >
+              <PillIcon />
+              Antidotes
+            </Link>
+          </li>
+          <li className="nav-item-new">
+            <Link
+              to="/blog"
+              className={`nav-link-new ${isActive('/blog') || location.pathname.startsWith('/blog/') ? 'active' : ''}`}
+              onClick={() => setIsOpen(false)}
+            >
+              <BookIcon />
+              Blog
+            </Link>
+          </li>
+          {user && user.role === 'admin' && (
+            <li className="nav-item-new">
+              <Link
+                to="/admin/dashboard"
+                className={`nav-link-new ${isActive('/admin/dashboard') ? 'active' : ''}`}
+                onClick={() => setIsOpen(false)}
+              >
+                <ShieldIcon />
+                Admin Dashboard
+              </Link>
+            </li>
+          )}
+          {user && user.role === 'blog_reviewer' && (
+            <li className="nav-item-new">
+              <Link
+                to="/blog-reviewer"
+                className={`nav-link-new ${isActive('/blog-reviewer') ? 'active' : ''}`}
+                onClick={() => setIsOpen(false)}
+              >
+                <BookIcon />
+                Blog Review
+              </Link>
+            </li>
+          )}
+          {user && user.role === 'doctor' && (
+            <li className="nav-item-new">
+              <Link
+                to="/doctor/dashboard"
+                className={`nav-link-new ${isActive('/doctor/dashboard') ? 'active' : ''}`}
+                onClick={() => setIsOpen(false)}
+              >
+                <svg width="16" height="16" className="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Doctor Dashboard
+              </Link>
+            </li>
+          )}
+          {user && user.role === 'hospital_admin' && (
+            <li className="nav-item-new">
+              <Link
+                to="/hospital/dashboard"
+                className={`nav-link-new ${isActive('/hospital/dashboard') ? 'active' : ''}`}
+                onClick={() => setIsOpen(false)}
+              >
+                <svg width="16" height="16" className="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                Hospital Dashboard
+              </Link>
+            </li>
+          )}
+          {user ? (
+            <li className="nav-item-new">
+              <Link
+                to="/profile"
+                className={`nav-link-new ${isActive('/profile') ? 'active' : ''}`}
+                onClick={() => setIsOpen(false)}
+              >
+                <UserIcon />
+                {user.full_name || user.email?.split('@')[0] || 'Profile'}
+              </Link>
+            </li>
+          ) : (
+            <li className="nav-item-new">
+              <Link
+                to="/login"
+                className={`nav-link-new ${isActive('/login') ? 'active' : ''}`}
+                onClick={() => setIsOpen(false)}
+              >
+                <UserIcon />
+                Login
+              </Link>
+            </li>
+          )}
+          <li className="nav-item-new">
+            <a
+              href="tel:102"
+              className="nav-link-new emergency-btn-new"
+              onClick={() => setIsOpen(false)}
+            >
+              <PhoneIcon />
+              Call 102
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  );
+}
