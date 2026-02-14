@@ -80,6 +80,73 @@ def seed_admin_user(db: Session):
             print("✅ Admin user flags corrected (verified + approved + active)")
     return admin
 
+
+def seed_demo_users(db: Session):
+    """Create demo users for each role so all dashboards can be tested"""
+    demo_users = [
+        {
+            "email": "doctor@poisonsense.ai",
+            "password": "doctor123",
+            "full_name": "Dr. Ramesh Sharma",
+            "phone": "+977-9841234567",
+            "role": UserRole.DOCTOR,
+            "registration_number": "NMC-12345",
+            "specialization": "Toxicology",
+            "experience_years": 10,
+        },
+        {
+            "email": "hospital@poisonsense.ai",
+            "password": "hospital123",
+            "full_name": "Bir Hospital Admin",
+            "phone": "+977-9851234567",
+            "role": UserRole.HOSPITAL_ADMIN,
+            "registration_number": "HSP-001",
+            "hospital_address": "Bir Hospital, Kathmandu, Nepal",
+        },
+        {
+            "email": "reviewer@poisonsense.ai",
+            "password": "reviewer123",
+            "full_name": "Blog Reviewer",
+            "phone": "+977-9861234567",
+            "role": UserRole.BLOG_REVIEWER,
+        },
+        {
+            "email": "user@poisonsense.ai",
+            "password": "user123",
+            "full_name": "Public User",
+            "phone": "+977-9871234567",
+            "role": UserRole.PATIENT,
+        },
+    ]
+
+    created = 0
+    for u in demo_users:
+        if not db.query(User).filter(User.email == u["email"]).first():
+            user = User(
+                email=u["email"],
+                hashed_password=get_password_hash(u["password"]),
+                full_name=u["full_name"],
+                phone=u.get("phone"),
+                role=u["role"],
+                is_active=True,
+                is_verified=True,
+                admin_approved=True,
+                registration_number=u.get("registration_number"),
+                specialization=u.get("specialization"),
+                experience_years=u.get("experience_years"),
+                hospital_address=u.get("hospital_address"),
+            )
+            db.add(user)
+            created += 1
+
+    if created:
+        db.commit()
+        print(f"✅ Seeded {created} demo users")
+        for u in demo_users:
+            print(f"   • {u['role'].value}: {u['email']} / {u['password']}")
+    else:
+        print("✅ Demo users already exist")
+
 def seed_poison_centers(db: Session):
     """Seed Poison Control Centers - Nepal"""
     centers_data = [
@@ -1336,6 +1403,7 @@ def init_database():
     try:
         # Seed data
         admin_user = seed_admin_user(db)
+        seed_demo_users(db)
         seed_poison_centers(db)
         seed_hospitals(db)
         seed_poisons(db)
@@ -1347,7 +1415,11 @@ def init_database():
         
         print("\n✅ Database initialization complete!")
         print("=" * 50)
-        print("Admin Login: admin@poisonsense.ai / admin123")
+        print("Admin Login:    admin@poisonsense.ai / admin123")
+        print("Doctor Login:   doctor@poisonsense.ai / doctor123")
+        print("Hospital Login: hospital@poisonsense.ai / hospital123")
+        print("Reviewer Login: reviewer@poisonsense.ai / reviewer123")
+        print("User Login:     user@poisonsense.ai / user123")
         print("API Docs: http://localhost:8000/docs")
         print("=" * 50)
         
