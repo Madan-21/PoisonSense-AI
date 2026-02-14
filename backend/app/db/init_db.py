@@ -11,6 +11,7 @@ from app.models.poison_syndrome import PoisonSyndrome
 from app.models.ai_log import AIModelVersion
 from app.models.blog_submission import BlogSubmission
 from app.core.security import get_password_hash
+from datetime import datetime
 
 from sqlalchemy import text
 
@@ -146,6 +147,70 @@ def seed_demo_users(db: Session):
             print(f"   • {u['role'].value}: {u['email']} / {u['password']}")
     else:
         print("✅ Demo users already exist")
+
+
+def link_hospital_admin(db: Session):
+    """Link the demo hospital_admin user to Bir Hospital so the dashboard works."""
+    hospital_user = db.query(User).filter(User.email == "hospital@poisonsense.ai").first()
+    if not hospital_user:
+        return
+
+    # Check if already linked to any hospital
+    already_linked = db.query(Hospital).filter(Hospital.admin_id == hospital_user.id).first()
+    if already_linked:
+        print(f"✅ Hospital admin already linked to '{already_linked.name}'")
+        return
+
+    # Link to Bir Hospital (the one matching the demo user's name)
+    bir = db.query(Hospital).filter(Hospital.name == "Bir Hospital").first()
+    if bir:
+        bir.admin_id = hospital_user.id
+        db.commit()
+        print(f"✅ Linked hospital admin (hospital@poisonsense.ai) → '{bir.name}'")
+    else:
+        # Fallback: link to the first available hospital without an admin
+        fallback = db.query(Hospital).filter(Hospital.admin_id == None).first()
+        if fallback:
+            fallback.admin_id = hospital_user.id
+            db.commit()
+            print(f"✅ Linked hospital admin (hospital@poisonsense.ai) → '{fallback.name}'")
+        else:
+            print("⚠️ No unassigned hospital found to link to hospital admin")
+
+
+def link_demo_doctor(db: Session):
+    """Create a Doctor record for the demo doctor user so the dashboard works."""
+    doctor_user = db.query(User).filter(User.email == "doctor@poisonsense.ai").first()
+    if not doctor_user:
+        return
+
+    existing = db.query(Doctor).filter(Doctor.user_id == doctor_user.id).first()
+    if existing:
+        print(f"✅ Doctor record already exists for doctor@poisonsense.ai")
+        return
+
+    # Link to TUTH
+    tuth = db.query(Hospital).filter(Hospital.name.ilike("%TUTH%")).first()
+    doctor = Doctor(
+        user_id=doctor_user.id,
+        registration_number="NMC-12345",
+        specialization="Toxicology",
+        qualification="MBBS, MD (Clinical Pharmacology & Toxicology)",
+        experience_years=10,
+        hospital_id=tuth.id if tuth else None,
+        verification_status=VerificationStatus.VERIFIED,
+        verified_at=datetime.utcnow(),
+        clinic_address="Maharajgunj, Kathmandu",
+        is_available=True,
+        is_active=True,
+        latitude=27.7356,
+        longitude=85.3318,
+    )
+    db.add(doctor)
+    db.commit()
+    hosp_name = tuth.name if tuth else "no hospital"
+    print(f"✅ Created Doctor record for doctor@poisonsense.ai → '{hosp_name}'")
+
 
 def seed_poison_centers(db: Session):
     """Seed Poison Control Centers - Nepal"""
@@ -1406,6 +1471,8 @@ def init_database():
         seed_demo_users(db)
         seed_poison_centers(db)
         seed_hospitals(db)
+        link_hospital_admin(db)  # Link hospital_admin user to Bir Hospital
+        link_demo_doctor(db)     # Create Doctor record for demo doctor
         seed_poisons(db)
         seed_antidote_inventory(db)
         seed_ai_model_version(db)
