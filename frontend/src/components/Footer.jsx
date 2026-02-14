@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import asset from "../utils/asset";
 
 // SVG Icons for social media
 const FacebookIcon = () => (
@@ -40,7 +41,7 @@ export default function Footer() {
           <div className="footer-logo">
             <div className="logo-icon-wrapper">
               <img
-                src="/images/logo.jpg"
+                src={asset("/images/logo.jpg")}
                 alt="PoisonSense AI Logo"
                 className="logo-icon"
               />

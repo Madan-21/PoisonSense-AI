@@ -4,6 +4,7 @@ import api from "../api/axios";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import BlogCommunity from "../components/BlogCommunity";
+import asset from "../utils/asset";
 import "../styles/BlogDetail.css";
 
 const BlogDetail = () => {
@@ -29,8 +30,8 @@ const BlogDetail = () => {
             year: 'numeric'
           }),
           readTime: data.read_time || '5 min read',
-          image: data.featured_image || '/images/default-article.jpg',
-          inlineImage: data.featured_image || '/images/default-article.jpg',
+          image: data.featured_image || asset('/images/default-article.jpg'),
+          inlineImage: data.featured_image || asset('/images/default-article.jpg'),
           source: 'PoisonSense AI Community'
         };
         setArticle(mappedArticle);
@@ -107,7 +108,7 @@ const BlogDetail = () => {
               <div className="article-meta-info">
                 <div className="author-info">
                   <img
-                    src="/images/default-avatar.jpg"
+                    src={asset("/images/default-avatar.jpg")}
                     alt={article.author}
                     className="author-avatar"
                   />

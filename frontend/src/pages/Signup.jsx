@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import OTPVerification from "../components/OTPVerification";
 import { getErrorMessage } from "../utils/errorHandler";
+import asset from "../utils/asset";
 import "../styles/signup.css";
 
 // Valid TLDs for email validation
@@ -192,7 +193,7 @@ export default function Signup() {
         <div className="signup-shell">
           <div className="signup-left">
             <div className="brand-row">
-              <img className="brand-logo" src="/images/logo.jpg" alt="PoisonSense AI" />
+              <img className="brand-logo" src={asset("/images/logo.jpg")} alt="PoisonSense AI" />
               <div>
                 <div className="brand-name">PoisonSense AI</div>
                 <div className="brand-sub">Verify your email</div>
@@ -209,7 +210,7 @@ export default function Signup() {
             </div>
           </div>
 
-          <div className="signup-right" style={{ backgroundImage: "url('/images/Signup.webp')" }}>
+          <div className="signup-right" style={{ backgroundImage: `url('${asset("/images/Signup.webp")}')` }}>
             <div className="right-overlay" />
             <div className="right-text">
               <h2>Emergency support, faster</h2>
@@ -616,7 +617,7 @@ export default function Signup() {
         </div>
 
         {/* RIGHT IMAGE */}
-        <div className="signup-right" style={{ backgroundImage: "url('/images/Signup.webp')" }}>
+        <div className="signup-right" style={{ backgroundImage: `url('${asset("/images/Signup.webp")}')` }}>
           <div className="right-overlay" />
           <div className="right-text">
             <h2>Support when it matters most</h2>

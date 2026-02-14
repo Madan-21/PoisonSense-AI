@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getErrorMessage } from "../utils/errorHandler";
+import asset from "../utils/asset";
 import "../styles/Login.css";
 
 /* Valid TLDs for email validation */
@@ -160,7 +161,7 @@ export default function Login() {
             </button>
 
             <div className="brand-row">
-              <img className="brand-logo-img" src="/images/logo.jpg" alt="PoisonSense Logo" />
+              <img className="brand-logo-img" src={asset("/images/logo.jpg")} alt="PoisonSense Logo" />
               <div className="brand-text">
                 <div className="brand-title">PoisonSense AI</div>
                 <div className="brand-sub">Email Verification</div>
@@ -188,7 +189,7 @@ export default function Login() {
       <div className="login-split-card">
         {/* LEFT IMAGE PANEL */}
         <div className="login-left">
-          <img className="left-bg-img" src="/images/poisonss.jpg" alt="PoisonSense Banner" />
+          <img className="left-bg-img" src={asset("/images/poisonss.jpg")} alt="PoisonSense Banner" />
           <div className="left-overlay">
             <div className="left-badge">
               <span className="dot" />
@@ -216,7 +217,7 @@ export default function Login() {
           </button>
 
           <div className="brand-row">
-            <img className="brand-logo-img" src="/images/logo.jpg" alt="PoisonSense Logo" />
+            <img className="brand-logo-img" src={asset("/images/logo.jpg")} alt="PoisonSense Logo" />
             <div className="brand-text">
               <div className="brand-title">PoisonSense AI</div>
               <div className="brand-sub">Sign in to continue</div>

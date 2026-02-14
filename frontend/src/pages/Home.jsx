@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PoisonMap from "../components/PoisonMap";
 import { useAuth } from "../context/AuthContext";
+import asset from "../utils/asset";
 
 export default function Home() {
   const { user } = useAuth();
@@ -74,7 +75,7 @@ export default function Home() {
 
           <div className="hero-right">
             <div className="glass-card">
-              <img src="/images/banner.jpg" alt="AI Medical Support" />
+              <img src={asset("/images/banner.jpg")} alt="AI Medical Support" />
             </div>
           </div>
         </div>
@@ -257,7 +258,7 @@ export default function Home() {
         <div className="about-container">
           <div className="about-left">
             <img
-              src="/images/home_about.jpg"
+              src={asset("/images/home_about.jpg")}
               alt="About PoisonSense AI"
               className="about-image"
             />

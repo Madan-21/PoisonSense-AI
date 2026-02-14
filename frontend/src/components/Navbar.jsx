@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import asset from "../utils/asset";
 
 // SVG Icons matching Figma design
 const HomeIcon = () => (
@@ -76,7 +77,7 @@ export default function Navbar() {
       <div className="navbar-container-new">
         <Link to="/" className="navbar-logo-new">
           <img
-            src="/images/logo.jpg"
+            src={asset("/images/logo.jpg")}
             alt="PoisonSense AI Logo"
             className="logo-image-new"
           />

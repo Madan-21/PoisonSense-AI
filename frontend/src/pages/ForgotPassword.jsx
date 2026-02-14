@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import authApi from "../api/authApi";
 import { getErrorMessage } from "../utils/errorHandler";
+import asset from "../utils/asset";
 import "../styles/Login.css";
 
 /* ── email validation (shared with Login) ── */
@@ -197,7 +198,7 @@ export default function ForgotPassword() {
       <div className="login-split-card">
         {/* LEFT IMAGE PANEL */}
         <div className="login-left">
-          <img className="left-bg-img" src="/images/poisonss.jpg" alt="PoisonSense Banner" />
+          <img className="left-bg-img" src={asset("/images/poisonss.jpg")} alt="PoisonSense Banner" />
           <div className="left-overlay">
             <div className="left-badge"><span className="dot" />Account Recovery</div>
             <h2 className="left-title">Reset your password</h2>
@@ -219,7 +220,7 @@ export default function ForgotPassword() {
           </button>
 
           <div className="brand-row">
-            <img className="brand-logo-img" src="/images/logo.jpg" alt="PoisonSense Logo" />
+            <img className="brand-logo-img" src={asset("/images/logo.jpg")} alt="PoisonSense Logo" />
             <div className="brand-text">
               <div className="brand-title">PoisonSense AI</div>
               <div className="brand-sub">Password Recovery</div>
