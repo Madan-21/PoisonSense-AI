@@ -25,6 +25,47 @@ def check_and_seed_database():
     except Exception as e:
         print(f"⚠️ Database seeding warning: {e}")
 
+
+def auto_ingest_pdfs():
+    """Auto-ingest bundled PDFs into ChromaDB if the vector store is empty.
+    Runs in a background thread so the server can start accepting requests."""
+    import threading
+
+    def _ingest():
+        try:
+            from rag.vector_store import get_collection_stats
+            from rag.ingest import ingest_directory
+            from pathlib import Path
+
+            stats = get_collection_stats()
+            total = sum(stats.values())
+            if total > 0:
+                print(f"📚 Vector store already has {total} chunks — skipping auto-ingest")
+                return
+
+            # Look for bundled PDFs in the repo
+            base = Path(__file__).resolve().parent.parent  # backend/
+            pdf_dirs = [
+                base / "rag" / "pdf_uploads",
+                base.parent / "Pdf's",           # repo root Pdf's/
+            ]
+
+            for pdf_dir in pdf_dirs:
+                pdfs = list(pdf_dir.glob("*.pdf")) if pdf_dir.exists() else []
+                if pdfs:
+                    print(f"📥 Auto-ingesting {len(pdfs)} PDFs from {pdf_dir.name}/ ...")
+                    results = ingest_directory(str(pdf_dir), "toxicology")
+                    ok = sum(1 for r in results if "error" not in r)
+                    print(f"✅ Auto-ingest complete: {ok}/{len(results)} PDFs ingested")
+                    return  # only ingest from one directory
+
+            print("📭 No PDFs found for auto-ingestion")
+        except Exception as e:
+            print(f"⚠️ Auto-ingest failed (non-fatal): {e}")
+
+    t = threading.Thread(target=_ingest, daemon=True)
+    t.start()
+
 # Create all database tables on startup
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -45,6 +86,9 @@ async def lifespan(app: FastAPI):
         # print("✅ ML Model loaded successfully")
     except Exception as e:
         print(f"⚠️ ML Model not loaded: {e}")
+    
+    # Auto-ingest bundled PDFs in background (won't block startup)
+    auto_ingest_pdfs()
     
     yield
     
