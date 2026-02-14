@@ -71,9 +71,3 @@ async def health_check():
 @app.get("/docs-info", tags=["Documentation"])
 async def docs_info():
     return {"swagger_ui": "/docs", "redoc": "/redoc", "openapi_json": "/openapi.json"}
-
-
-# ── Mangum handler for Vercel serverless ───────────────────────────────
-from mangum import Mangum  # noqa: E402
-
-handler = Mangum(app, lifespan="auto")
