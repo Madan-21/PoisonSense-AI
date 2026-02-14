@@ -425,8 +425,13 @@ export default function AiAssistant() {
   };
 
   // ── Status helpers ──────────────────────────────────────────────
-  const isOnline = status && status.has_data;
-  const statusLabel = isOnline ? 'Online' : 'Offline';
+  // The RAG system is "online" if the /rag/status endpoint responded
+  // successfully (status === "operational").  Even without ingested PDFs
+  // the chatbot still works via database tools (hospitals, antidotes, etc.).
+  const isOnline = status && status.status === 'operational';
+  const statusLabel = isOnline
+    ? (status.has_data ? 'Online' : 'Online (no docs)')
+    : 'Offline';
 
   return (
     <>
@@ -443,7 +448,7 @@ export default function AiAssistant() {
               </div>
             </div>
             <div className="rag-header-right">
-              <span className={`status-dot ${isOnline ? 'online' : 'empty'}`}>
+              <span className={`status-dot ${isOnline ? 'online' : 'offline'}`}>
                 {isOnline ? '●' : '○'} {statusLabel}
               </span>
               <button className="btn-reset" onClick={handleReset} title="Reset conversation">
