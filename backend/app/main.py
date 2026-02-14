@@ -33,10 +33,13 @@ def auto_ingest_pdfs():
 
     def _ingest():
         try:
+            import traceback
             from rag.vector_store import get_collection_stats
-            from rag.ingest import ingest_directory
+            from rag.ingest import ingest_pdf
+            from rag.config import DEFAULT_COLLECTION
             from pathlib import Path
 
+            print("🔍 Auto-ingest: checking vector store...")
             stats = get_collection_stats()
             total = sum(stats.values())
             if total > 0:
@@ -46,17 +49,32 @@ def auto_ingest_pdfs():
             # PDFs are bundled in backend/rag/pdf_uploads/
             base = Path(__file__).resolve().parent.parent  # backend/
             pdf_dir = base / "rag" / "pdf_uploads"
+            print(f"🔍 Looking for PDFs in: {pdf_dir} (exists={pdf_dir.exists()})")
 
-            pdfs = list(pdf_dir.glob("*.pdf")) if pdf_dir.exists() else []
-            if pdfs:
-                print(f"📥 Auto-ingesting {len(pdfs)} PDFs from rag/pdf_uploads/ ...")
-                results = ingest_directory(str(pdf_dir), "toxicology")
-                ok = sum(1 for r in results if "error" not in r)
-                print(f"✅ Auto-ingest complete: {ok}/{len(results)} PDFs ingested")
-            else:
+            pdfs = sorted(pdf_dir.glob("*.pdf")) if pdf_dir.exists() else []
+            if not pdfs:
                 print("📭 No PDFs found in rag/pdf_uploads/ for auto-ingestion")
+                return
+
+            print(f"📥 Auto-ingesting {len(pdfs)} PDFs one-by-one into '{DEFAULT_COLLECTION}' ...")
+            ok = 0
+            for i, pdf in enumerate(pdfs, 1):
+                try:
+                    print(f"  [{i}/{len(pdfs)}] Ingesting {pdf.name} ({pdf.stat().st_size // 1024}KB)...")
+                    result = ingest_pdf(str(pdf), DEFAULT_COLLECTION)
+                    if "error" not in result:
+                        ok += 1
+                        print(f"    ✓ {result.get('chunks', '?')} chunks")
+                    else:
+                        print(f"    ✗ {result['error']}")
+                except Exception as e:
+                    print(f"    ✗ Exception: {e}")
+                    traceback.print_exc()
+            print(f"✅ Auto-ingest complete: {ok}/{len(pdfs)} PDFs ingested")
         except Exception as e:
+            import traceback
             print(f"⚠️ Auto-ingest failed (non-fatal): {e}")
+            traceback.print_exc()
 
     t = threading.Thread(target=_ingest, daemon=True)
     t.start()
