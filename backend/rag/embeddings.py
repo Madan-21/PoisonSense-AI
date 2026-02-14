@@ -37,10 +37,10 @@ def embed_texts(texts: List[str]) -> List[List[float]]:
         # For sentence-transformers models, it returns the pooled embedding directly
         for item in data:
             if isinstance(item[0], list):
-                # Token-level embeddings — mean pool to get sentence embedding
-                import numpy as np
-                arr = np.array(item)
-                pooled = arr.mean(axis=0).tolist()
+                # Token-level embeddings — mean pool to get sentence embedding (pure Python, no numpy)
+                num_tokens = len(item)
+                dim = len(item[0])
+                pooled = [sum(item[t][d] for t in range(num_tokens)) / num_tokens for d in range(dim)]
                 all_embeddings.append(pooled)
             else:
                 # Already a sentence embedding

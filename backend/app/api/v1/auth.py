@@ -427,29 +427,29 @@ async def upload_license(
             detail="User not found."
         )
     
-    # Upload to Supabase Storage (S3-compatible)
-    import boto3
-    from botocore.config import Config as BotoConfig
+    # Upload to Supabase Storage (REST API — no boto3 needed)
+    import httpx
 
     ext = os.path.splitext(license_file.filename)[1] or ".pdf"
     unique_name = f"{user.id}_{uuid.uuid4().hex[:8]}{ext}"
     object_key = f"licenses/{unique_name}"
 
     try:
-        s3 = boto3.client(
-            "s3",
-            endpoint_url=f"{settings.SUPABASE_URL}/storage/v1/s3",
-            aws_access_key_id=settings.SUPABASE_SERVICE_KEY,
-            aws_secret_access_key=settings.SUPABASE_SERVICE_KEY,
-            config=BotoConfig(signature_version="s3v4"),
-            region_name="us-east-1",
+        upload_url = (
+            f"{settings.SUPABASE_URL}/storage/v1/object/"
+            f"{settings.STORAGE_BUCKET}/{object_key}"
         )
-        s3.put_object(
-            Bucket=settings.STORAGE_BUCKET,
-            Key=object_key,
-            Body=content,
-            ContentType=license_file.content_type,
+        resp = httpx.post(
+            upload_url,
+            headers={
+                "Authorization": f"Bearer {settings.SUPABASE_SERVICE_KEY}",
+                "apikey": settings.SUPABASE_SERVICE_KEY,
+                "Content-Type": license_file.content_type or "application/octet-stream",
+            },
+            content=content,
+            timeout=30,
         )
+        resp.raise_for_status()
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

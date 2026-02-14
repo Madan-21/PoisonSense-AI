@@ -8,7 +8,6 @@ mangum>=0.17.0            # AWS Lambda / Vercel adapter
 
 # Database (Postgres + pgvector)
 sqlalchemy>=2.0.35
-alembic>=1.13.1
 psycopg2-binary>=2.9.9    # Postgres driver
 pgvector>=0.3.0           # pgvector SQLAlchemy support
 
@@ -18,15 +17,13 @@ passlib[bcrypt]>=1.7.4
 bcrypt>=4.1.2
 
 # ML & AI  (NO local models — HF Inference API for embeddings, Groq for LLM)
-scikit-learn>=1.4.0
-pandas>=2.1.4
-numpy>=1.26.3
+# scikit-learn, pandas, numpy are NOT installed on Vercel (too large).
+# The ML service (DistilBERT) gracefully falls back when unavailable.
 
 # RAG Pipeline (API-based, no local models)
 pdfplumber>=0.10.0
 PyPDF2>=3.0.0
 groq>=0.9.0               # Free LLM inference
-tiktoken>=0.6.0           # Token counting
 
 # Validation & Utils
 pydantic>=2.5.3
@@ -36,14 +33,9 @@ email-validator>=2.1.0
 
 # HTTP Client (for external APIs)
 httpx>=0.26.0
-aiohttp>=3.9.1
 requests>=2.31.0
 
 # Geolocation
 geopy>=2.4.1
 
-# CORS
-starlette>=0.35.1
-
-# Storage (S3-compatible for Supabase Storage)
-boto3>=1.34.0
+# Storage (Supabase REST API — no boto3 needed, uses httpx instead)
