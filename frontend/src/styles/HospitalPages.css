@@ -16,7 +16,7 @@
 }
 .back-btn:hover {
   background: white;
-  color: #00b4db;
+  color: #0a1e3f;
   border-color: white;
 }
 
@@ -49,16 +49,16 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.section-header {
+.inventory-section .section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1.25rem;
 }
 
-.section-header h2 {
+.inventory-section .section-header h2 {
   margin: 0;
-  color: #0083b0;
+  color: #1a3a52;
   font-size: 1.35rem;
 }
 
@@ -145,12 +145,12 @@
 }
 .add-row input:focus {
   outline: none;
-  border-color: #00b4db;
-  box-shadow: 0 0 0 3px rgba(0, 180, 219, 0.12);
+  border-color: #0a1e3f;
+  box-shadow: 0 0 0 3px rgba(10, 30, 63, 0.12);
 }
 
 .add-btn {
-  background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 100%);
   color: white;
   border: none;
   padding: 0.7rem 1.2rem;
@@ -163,7 +163,7 @@
 }
 .add-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 180, 219, 0.35);
+  box-shadow: 0 4px 12px rgba(10, 30, 63, 0.35);
 }
 
 .test-add-row {
@@ -263,7 +263,7 @@
 
 .form-section h2 {
   margin: 0 0 1.5rem 0;
-  color: #0083b0;
+  color: #1a3a52;
   font-size: 1.3rem;
 }
 
@@ -305,8 +305,8 @@
 .form-field textarea:focus,
 .form-field select:focus {
   outline: none;
-  border-color: #00b4db;
-  box-shadow: 0 0 0 3px rgba(0, 180, 219, 0.12);
+  border-color: #0a1e3f;
+  box-shadow: 0 0 0 3px rgba(10, 30, 63, 0.12);
 }
 
 .form-field textarea {
@@ -325,7 +325,7 @@
 .toggle-label input[type="checkbox"] {
   width: 20px;
   height: 20px;
-  accent-color: #00b4db;
+  accent-color: #0a1e3f;
   cursor: pointer;
 }
 
@@ -356,7 +356,7 @@
 }
 .period-btn.active {
   background: white;
-  color: #0083b0;
+  color: #1a3a52;
   border-color: white;
 }
 
@@ -370,7 +370,7 @@
 
 .report-section h2 {
   margin: 0 0 1.5rem 0;
-  color: #0083b0;
+  color: #1a3a52;
   font-size: 1.3rem;
 }
 
@@ -437,7 +437,7 @@
 .poison-rank {
   font-weight: 800;
   font-size: 1rem;
-  color: #0083b0;
+  color: #1a3a52;
   min-width: 32px;
 }
 

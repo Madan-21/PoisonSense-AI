@@ -85,11 +85,21 @@ VAGUE_EXPOSURE_PATTERNS = [
     r"\b(i\s+think\s+i\s+(drank|swallowed|ate|touched))\b",
     r"\b(i\s+(drank|swallowed|ate)\s+something)\b",
     r"\b(something\s+bad|feel\s+(sick|weird|dizzy|nauseous))\b",
-    r"\b(exposed|exposure)\b",
+    r"\b(i\s+was\s+exposed|i\s+got\s+exposed|been\s+exposed)\b",
     r"\b(accidental|accidentally)\b.*\b(swallowed|drank|ingested|inhaled)\b",
 ]
 
 _vague_regex = re.compile("|".join(VAGUE_EXPOSURE_PATTERNS), re.IGNORECASE)
+
+# ── Prevention / Informational Query Detection ────────────────────────
+# Queries that ask "how to prevent" should NEVER be treated as exposure events.
+
+_PREVENTION_PATTERNS = re.compile(
+    r"\b(prevent|prevention|avoid|protect|safe\s+storage|safety\s+tips?"
+    r"|childproof|child.?proof|keep\s+away|store\s+safely|how\s+to\s+store"
+    r"|precaution|guideline|recommendation|best\s+practice|tip|awareness)\b",
+    re.IGNORECASE,
+)
 
 
 # ── Classification ─────────────────────────────────────────────────────
@@ -145,9 +155,9 @@ def classify_query(query: str) -> Dict[str, Any]:
         result["policy_notes"] = "Potential emergency. Escalate to emergency services."
         return result
 
-    # Check vague exposure (needs triage)
+    # Check vague exposure (needs triage) — but NOT if it's a prevention/info question
     vague_match = _vague_regex.search(query)
-    if vague_match:
+    if vague_match and not _PREVENTION_PATTERNS.search(query):
         result["risk_level"] = "medium"
         result["needs_triage"] = True
         result["matched_pattern"] = vague_match.group()

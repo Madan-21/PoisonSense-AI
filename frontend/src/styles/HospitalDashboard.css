@@ -1,7 +1,7 @@
 /* Hospital Dashboard Styles */
 .hospital-dashboard {
   min-height: calc(100vh - 120px);
-  background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 100%);
   padding: 2rem;
 }
 
@@ -18,7 +18,7 @@
 
 .header-content h1 {
   margin: 0;
-  color: #00b4db;
+  color: #0a1e3f;
   font-size: 2rem;
 }
 
@@ -53,7 +53,7 @@
 
 .info-card h3 {
   margin: 0 0 1.5rem 0;
-  color: #00b4db;
+  color: #0a1e3f;
   font-size: 1.3rem;
 }
 
@@ -81,7 +81,7 @@
 }
 
 .info-item .value.phone {
-  color: #00b4db;
+  color: #0a1e3f;
   font-weight: 600;
 }
 
@@ -118,7 +118,7 @@
 }
 
 .cases-stats .stat-icon {
-  background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 100%);
 }
 
 .emergency-stats .stat-icon {
@@ -155,7 +155,7 @@
 
 .quick-actions h2 {
   margin: 0 0 1.5rem 0;
-  color: #00b4db;
+  color: #0a1e3f;
 }
 
 .action-grid {
@@ -179,19 +179,19 @@
 }
 
 .action-btn.primary {
-  background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 100%);
   color: white;
 }
 
 .action-btn.secondary {
   background: #f8f9fa;
-  color: #00b4db;
-  border: 2px solid #00b4db;
+  color: #0a1e3f;
+  border: 2px solid #0a1e3f;
 }
 
 .action-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 180, 219, 0.4);
+  box-shadow: 0 4px 12px rgba(10, 30, 63, 0.4);
 }
 
 .btn-icon {
@@ -208,7 +208,7 @@
 
 .facilities-section h2, .antidotes-section h2, .tests-section h2 {
   margin: 0 0 1.5rem 0;
-  color: #00b4db;
+  color: #0a1e3f;
 }
 
 .facilities-grid, .tests-grid {
@@ -219,7 +219,7 @@
 
 .facility-badge, .test-badge {
   background: #e3f2fd;
-  color: #0083b0;
+  color: #0a1e3f;
   padding: 0.75rem 1rem;
   border-radius: 10px;
   font-weight: 600;
@@ -243,7 +243,7 @@
 }
 
 .antidote-card:hover {
-  border-color: #00b4db;
+  border-color: #0a1e3f;
 }
 
 .antidote-icon {
@@ -288,7 +288,7 @@
 
 .recent-section h2 {
   margin: 0 0 1.5rem 0;
-  color: #00b4db;
+  color: #0a1e3f;
 }
 
 .cases-table {

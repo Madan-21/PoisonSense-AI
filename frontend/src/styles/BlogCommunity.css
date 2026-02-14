@@ -81,7 +81,7 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -132,7 +132,7 @@
 
 .comment-input-container textarea:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #0a1e3f;
 }
 
 .comment-actions {
@@ -141,7 +141,7 @@
 }
 
 .post-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 100%);
   color: white;
   border: none;
   padding: 0.75rem 2rem;
@@ -153,7 +153,7 @@
 
 .post-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(10, 30, 63, 0.4);
 }
 
 .login-prompt {
@@ -171,7 +171,7 @@
 }
 
 .login-prompt a {
-  color: #667eea;
+  color: #0a1e3f;
   font-weight: 600;
   text-decoration: none;
 }
@@ -200,7 +200,7 @@
 }
 
 .comment:hover {
-  border-color: #667eea;
+  border-color: #0a1e3f;
 }
 
 .comment-header {
@@ -217,7 +217,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -308,7 +308,7 @@
 
 .comment-actions .action-btn:hover {
   background: #e9ecef;
-  border-color: #667eea;
+  border-color: #0a1e3f;
 }
 
 .comment-actions .action-btn .icon {

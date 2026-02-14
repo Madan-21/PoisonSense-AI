@@ -47,7 +47,7 @@ def _migrate_users_table():
                     print(f"  ⚠️ Could not add column '{col_name}': {e}")
 
 def seed_admin_user(db: Session):
-    """Create default admin user"""
+    """Create default admin user (or ensure existing admin is properly configured)"""
     admin = db.query(User).filter(User.email == "admin@poisonsense.ai").first()
     if not admin:
         admin = User(
@@ -57,11 +57,27 @@ def seed_admin_user(db: Session):
             phone="+91-9999999999",
             role=UserRole.ADMIN,
             is_active=True,
-            is_verified=True
+            is_verified=True,
+            admin_approved=True
         )
         db.add(admin)
         db.commit()
         print("✅ Admin user created (admin@poisonsense.ai / admin123)")
+    else:
+        # Ensure admin flags are always correct so admin can always log in
+        changed = False
+        if not admin.is_verified:
+            admin.is_verified = True
+            changed = True
+        if not admin.admin_approved:
+            admin.admin_approved = True
+            changed = True
+        if not admin.is_active:
+            admin.is_active = True
+            changed = True
+        if changed:
+            db.commit()
+            print("✅ Admin user flags corrected (verified + approved + active)")
     return admin
 
 def seed_poison_centers(db: Session):

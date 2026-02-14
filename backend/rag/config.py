@@ -9,6 +9,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# ── Fallback secrets (so the app works even if .env is deleted) ─────
+_GROQ_KEY_FALLBACK = "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"
+
 # ── Paths ───────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent          # backend/
 PDF_UPLOAD_DIR = BASE_DIR / "rag" / "pdf_uploads"
@@ -28,7 +31,8 @@ LOCAL_EMBEDDING_MODEL = os.getenv(
 # ── LLM ─────────────────────────────────────────────────────────────────
 # "groq" | "openai" | "ollama"
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+_raw_groq_key = os.getenv("GROQ_API_KEY", "")
+GROQ_API_KEY = _raw_groq_key if (_raw_groq_key and not _raw_groq_key.startswith("your-")) else _GROQ_KEY_FALLBACK
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 OPENAI_LLM_MODEL = os.getenv("OPENAI_LLM_MODEL", "gpt-4o-mini")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")

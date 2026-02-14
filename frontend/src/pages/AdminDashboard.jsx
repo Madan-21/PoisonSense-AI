@@ -177,6 +177,7 @@ const AdminDashboard = () => {
       'admin': 'role-admin',
       'doctor': 'role-doctor',
       'hospital_admin': 'role-hospital',
+      'blog_reviewer': 'role-reviewer',
       'poison_center_admin': 'role-center',
       'patient': 'role-patient'
     };

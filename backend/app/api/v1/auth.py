@@ -11,7 +11,8 @@ from app.db.session import get_db
 from app.models.user import User, UserRole
 from app.schemas.auth import (
     UserSignup, UserLogin, Token, LoginResponse, UserResponse,
-    VerifyOTPRequest, ResendOTPRequest, SignupResponse, VerificationResponse
+    VerifyOTPRequest, ResendOTPRequest, SignupResponse, VerificationResponse,
+    ForgotPasswordRequest, ResetPasswordRequest
 )
 from app.core.security import (
     get_password_hash, 
@@ -24,7 +25,8 @@ from app.services.email_service import (
     send_verification_email, 
     verify_otp, 
     send_welcome_email,
-    clear_otp
+    clear_otp,
+    send_password_reset_email
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -429,3 +431,70 @@ async def upload_license(
         "message": "License document uploaded successfully.",
         "file_path": relative_path
     }
+
+
+# ── Password Reset ──────────────────────────────────────────────────
+
+@router.post("/forgot-password")
+async def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Forgot password — Step 1: Send OTP to the user's registered email.
+    """
+    email = data.email.lower()
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No account found with this email address. Please check the email or sign up for a new account.",
+        )
+
+    # Send password-reset OTP
+    success, message = await send_password_reset_email(email, user.full_name)
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=message,
+        )
+
+    # For dev mode, forward the DEV_MODE message to the frontend
+    return {"message": message, "email": email}
+
+
+@router.post("/reset-password")
+async def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Reset password — Step 2: Verify OTP and set a new password.
+    """
+    email = data.email.lower()
+
+    # Verify the OTP
+    is_valid, message = verify_otp(email, data.otp)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=message,
+        )
+
+    # Find user
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found.",
+        )
+
+    # Reject if new password is the same as the current one
+    if verify_password(data.new_password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password cannot be the same as your current password. Please choose a different password.",
+        )
+
+    # Update password
+    user.hashed_password = get_password_hash(data.new_password)
+    user.updated_at = datetime.utcnow()
+    db.commit()
+
+    return {"message": "Password reset successfully! You can now log in with your new password."}

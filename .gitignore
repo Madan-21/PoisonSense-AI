@@ -79,15 +79,6 @@ build/
 *.sqlite
 *.sqlite3
 
-# ChromaDB vector store (auto-generated on ingest)
-backend/rag/chroma_store/
-
-# PDF uploads (user data, not tracked)
-backend/rag/pdf_uploads/
-
-# RAGAS evaluation results
-ragas_results.json
-
 # Virtual environments
 venv/
 .venv/

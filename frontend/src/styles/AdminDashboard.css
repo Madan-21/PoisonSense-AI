@@ -2,7 +2,7 @@
 
 .admin-dashboard {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 100%);
   padding: 2rem;
   animation: fadeIn 0.5s ease;
 }
@@ -267,7 +267,7 @@
 
 .tab-btn.active {
   background: white;
-  color: #667eea;
+  color: #0a1e3f;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   transform: translateY(-2px);
   border-color: white;
@@ -300,7 +300,7 @@
   font-size: 1.75rem;
   font-weight: 700;
   padding-bottom: 1rem;
-  border-bottom: 3px solid #667eea;
+  border-bottom: 3px solid #1a3a52;
   display: inline-block;
 }
 
@@ -339,7 +339,7 @@
 }
 
 .users-table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 100%);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -384,7 +384,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: 'Courier New', monospace;
-  color: #667eea;
+  color: #1a3a52;
   font-weight: 600;
 }
 
@@ -425,12 +425,17 @@
 }
 
 .role-hospital {
-  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+  background: linear-gradient(135deg, #2d5a7b 0%, #1a3a52 100%);
   color: white;
 }
 
 .role-center {
   background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+  color: white;
+}
+
+.role-reviewer {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
 }
 
@@ -607,7 +612,7 @@
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 100%);
   color: white;
   white-space: nowrap;
 }

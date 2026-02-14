@@ -77,4 +77,26 @@ export const ragApi = {
     });
     return response.data;
   },
+
+  // Submit feedback on a chatbot answer (helpful / not_helpful)
+  submitFeedback: async (interactionId, feedback, note = '') => {
+    const response = await api.post('/rag/feedback', {
+      interaction_id: interactionId,
+      feedback,
+      note,
+    });
+    return response.data;
+  },
+
+  // Trigger agentic learning (ingest helpful interactions into KB)
+  triggerLearning: async () => {
+    const response = await api.post('/rag/learn');
+    return response.data;
+  },
+
+  // Get learning system stats
+  getLearningStats: async () => {
+    const response = await api.get('/rag/learning/stats');
+    return response.data;
+  },
 };

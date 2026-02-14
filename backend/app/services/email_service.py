@@ -170,7 +170,7 @@ async def send_verification_email(email: str, full_name: str) -> tuple[bool, str
         # Development mode - still generate OTP but don't show it
         otp = generate_otp()
         store_otp(email, otp)
-        return False, "Email service not configured. Please contact administrator to set up SMTP settings for email verification. Your account will be reviewed and verified within 24 hours."
+        return True, f"DEV_MODE: Your OTP is {otp}"
     
     try:
         # Generate OTP
@@ -428,3 +428,85 @@ If you believe this was a mistake, you may register again with valid documentati
     except Exception as e:
         # Don't fail rejection if email fails
         return False, f"Rejection email failed: {str(e)}"
+
+
+async def send_password_reset_email(email: str, full_name: str) -> tuple[bool, str]:
+    """Send OTP for password reset"""
+
+    # Generate and store OTP
+    otp = generate_otp()
+    store_otp(email, otp)
+
+    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+        # Dev mode – return OTP in message so frontend can display it
+        return True, f"DEV_MODE: Your OTP is {otp}"
+
+    try:
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"></head>
+        <body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f4f4f4;">
+            <table role="presentation" style="width:100%;border-collapse:collapse;">
+                <tr><td align="center" style="padding:40px 0;">
+                    <table role="presentation" style="width:600px;border-collapse:collapse;background:#fff;border-radius:10px;box-shadow:0 4px 6px rgba(0,0,0,.1);">
+                        <tr><td style="padding:40px;text-align:center;background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);border-radius:10px 10px 0 0;">
+                            <h1 style="margin:0;color:#fff;font-size:28px;">🔒 PoisonSense AI</h1>
+                            <p style="margin:10px 0 0;color:#fff;opacity:.9;">Password Reset</p>
+                        </td></tr>
+                        <tr><td style="padding:40px;">
+                            <h2 style="margin:0 0 20px;color:#333;font-size:24px;">Hello {full_name}! 👋</h2>
+                            <p style="margin:0 0 20px;color:#666;font-size:16px;line-height:1.6;">
+                                We received a request to reset your password. Use the code below to set a new password:
+                            </p>
+                            <div style="background:#f8f9fa;border:2px dashed #f59e0b;border-radius:10px;padding:30px;text-align:center;margin:30px 0;">
+                                <p style="margin:0 0 10px;color:#666;font-size:14px;">Your Reset Code</p>
+                                <h1 style="margin:0;color:#d97706;font-size:48px;letter-spacing:10px;font-weight:bold;">{otp}</h1>
+                            </div>
+                            <p style="margin:0 0 10px;color:#666;font-size:14px;">⏰ This code expires in <strong>{settings.OTP_EXPIRE_MINUTES} minutes</strong>.</p>
+                            <p style="margin:0;color:#666;font-size:14px;">🔒 If you didn't request this, please ignore this email. Your password will remain unchanged.</p>
+                        </td></tr>
+                        <tr><td style="padding:30px 40px;background:#f8f9fa;border-radius:0 0 10px 10px;text-align:center;">
+                            <p style="margin:0;color:#999;font-size:12px;">© 2026 PoisonSense AI. All rights reserved.</p>
+                        </td></tr>
+                    </table>
+                </td></tr>
+            </table>
+        </body>
+        </html>
+        """
+
+        text_content = f"""
+PoisonSense AI - Password Reset
+
+Hello {full_name}!
+
+Your password reset code is: {otp}
+
+This code expires in {settings.OTP_EXPIRE_MINUTES} minutes.
+If you didn't request this, please ignore this email.
+
+— PoisonSense AI
+        """
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"🔒 PoisonSense AI - Password Reset Code: {otp}"
+        msg["From"] = f"{settings.EMAIL_FROM_NAME} <{settings.SMTP_USER}>"
+        msg["To"] = email
+
+        msg.attach(MIMEText(text_content, "plain"))
+        msg.attach(MIMEText(html_content, "html"))
+
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+            server.starttls()
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            server.sendmail(settings.SMTP_USER, email, msg.as_string())
+
+        return True, "Password reset code sent to your email! Check your inbox and spam folder."
+
+    except smtplib.SMTPAuthenticationError:
+        return False, "Email service authentication failed. Please contact support."
+    except smtplib.SMTPException as e:
+        return False, f"Failed to send email: {str(e)}"
+    except Exception as e:
+        return False, f"An error occurred: {str(e)}"

@@ -1,4 +1,7 @@
 # App entry point - Main FastAPI Application
+# Patch chromadb for Python 3.14 compatibility — MUST run before any chromadb import
+import chromadb_patch  # noqa: F401
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles

@@ -26,6 +26,7 @@ from rag.vector_store import (
     delete_collection, get_or_create_collection,
 )
 from rag.tools import execute_tool, get_poison_control_contacts
+from rag.learning import record_feedback, ingest_learned_interactions, get_learning_stats, log_interaction
 
 router = APIRouter(prefix="/rag", tags=["RAG Chatbot"])
 
@@ -45,6 +46,7 @@ class AskResponse(BaseModel):
     follow_up_questions: list
     safety: dict
     session_id: str
+    interaction_id: Optional[str] = None
 
 class IngestResponse(BaseModel):
     status: str
@@ -74,6 +76,22 @@ async def ask_question(req: AskRequest):
             latitude=req.latitude,
             longitude=req.longitude,
         )
+        # Log interaction for the agentic learning loop
+        try:
+            import json
+            conf = result.get("confidence", {})
+            iid = log_interaction(
+                question=req.message,
+                answer=result.get("answer", "")[:2000],
+                session_id=result.get("session_id", ""),
+                sources=json.dumps(result.get("sources", [])[:3]),
+                confidence=conf.get("score", 0.0) if isinstance(conf, dict) else 0.0,
+                risk_level=result.get("safety", {}).get("risk_level", "low"),
+            )
+            result["interaction_id"] = iid
+        except Exception:
+            result["interaction_id"] = None
+
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
@@ -194,3 +212,42 @@ async def rag_status():
         "has_data": total > 0,
         "cache_stats": cache.stats,
     }
+
+
+# ── /feedback — User rates an answer ──────────────────────────────────
+
+class FeedbackRequest(BaseModel):
+    interaction_id: str = Field(..., description="The interaction ID returned in the response")
+    feedback: str = Field(..., description="'helpful' or 'not_helpful'")
+    note: str = Field("", description="Optional note from the user")
+
+@router.post("/feedback")
+async def submit_feedback(req: FeedbackRequest):
+    """Submit user feedback on a chatbot answer (helpful / not helpful).
+    This powers the agentic learning loop — helpful answers get ingested
+    back into the knowledge base over time."""
+    success = record_feedback(req.interaction_id, req.feedback, req.note)
+    if not success:
+        raise HTTPException(status_code=404, detail="Interaction not found or invalid feedback value")
+    return {"status": "recorded", "interaction_id": req.interaction_id, "feedback": req.feedback}
+
+
+# ── /learn — Trigger learning ingestion ────────────────────────────────
+
+@router.post("/learn")
+async def trigger_learning():
+    """Ingest user-verified (helpful) interactions into the knowledge base.
+    This is the agentic learning step — the AI gets smarter from user feedback."""
+    try:
+        result = ingest_learned_interactions()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Learning error: {str(e)}")
+
+
+# ── /learning/stats — Learning system metrics ─────────────────────────
+
+@router.get("/learning/stats")
+async def learning_stats():
+    """Get statistics about the agentic learning system."""
+    return get_learning_stats()

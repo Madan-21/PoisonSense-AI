@@ -92,7 +92,29 @@ export const authApi = {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
-  }
+  },
+
+  // Forgot Password — request OTP
+  forgotPassword: async (email) => {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  // Reset Password — verify OTP + new password
+  resetPassword: async (email, otp, newPassword) => {
+    const response = await api.post('/auth/reset-password', {
+      email,
+      otp,
+      new_password: newPassword,
+    });
+    return response.data;
+  },
+
+  // Resend forgot-password OTP (reuses forgot-password endpoint)
+  resendResetOTP: async (email) => {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
 };
 
 export default authApi;

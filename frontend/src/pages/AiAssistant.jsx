@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ragApi } from '../api/ragApi';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import '../styles/RagChat.css';
 
 /* ── Inline SVG Icons ──────────────────────────────────────────────── */
@@ -73,7 +72,7 @@ function FollowUps({ questions, onSelect }) {
   );
 }
 
-function MessageBubble({ msg, onFollowUp }) {
+function MessageBubble({ msg, onFollowUp, onFeedback }) {
   if (msg.role === 'user') {
     return (
       <div className="msg-row msg-user">
@@ -139,6 +138,26 @@ function MessageBubble({ msg, onFollowUp }) {
         {data.safety?.emergency_escalation && (
           <div className="safety-badge safety-high" style={{ marginTop: 12 }}>
             🚨 {data.safety.emergency_escalation.slice(0, 200)}
+          </div>
+        )}
+
+        {/* Feedback buttons — helps the AI learn */}
+        {data.interaction_id && (
+          <div className="feedback-row">
+            <span className="feedback-label">Was this helpful?</span>
+            <button
+              className={`feedback-btn ${msg.feedback === 'helpful' ? 'active-helpful' : ''}`}
+              onClick={() => onFeedback && onFeedback(msg, 'helpful')}
+              disabled={!!msg.feedback}
+              title="Helpful — this improves future answers"
+            >👍</button>
+            <button
+              className={`feedback-btn ${msg.feedback === 'not_helpful' ? 'active-not-helpful' : ''}`}
+              onClick={() => onFeedback && onFeedback(msg, 'not_helpful')}
+              disabled={!!msg.feedback}
+              title="Not helpful"
+            >👎</button>
+            {msg.feedback && <span className="feedback-thanks">Thanks for your feedback!</span>}
           </div>
         )}
 
@@ -223,21 +242,63 @@ const WELCOME = {
    Main Component
    ═══════════════════════════════════════════════════════════════════════ */
 
+const STORAGE_KEY = 'poisonsense_chat';
+
+function loadSavedChat() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    if (saved && Array.isArray(saved.messages) && saved.messages.length > 1) {
+      return saved; // { messages, sessionId }
+    }
+  } catch {}
+  return null;
+}
+
+function saveChat(messages, sessionId) {
+  try {
+    // Only persist if there's more than the welcome message
+    if (messages.length > 1) {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ messages, sessionId }));
+    }
+  } catch {}
+}
+
 export default function AiAssistant() {
   const { user } = useAuth();
-  const [messages, setMessages] = useState([WELCOME]);
+
+  // Restore chat from sessionStorage on mount
+  const saved = loadSavedChat();
+  const [messages, setMessages] = useState(saved ? saved.messages : [WELCOME]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sessionId, setSessionId] = useState(null);
+  const [sessionId, setSessionId] = useState(saved?.sessionId || null);
   const [status, setStatus] = useState(null); // { collections, total_documents }
   const [userLocation, setUserLocation] = useState(null); // { latitude, longitude }
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Auto-scroll to bottom — scroll only within the messages container,
-  // not the entire page (which caused the page to jump to the bottom)
+  // Persist chat to sessionStorage whenever messages or sessionId change
   useEffect(() => {
+    saveChat(messages, sessionId);
+  }, [messages, sessionId]);
+
+  // Lock body scroll while the chatbot page is mounted so the browser
+  // can never scroll the outer page (e.g. to bring the textarea into view).
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.scrollTo(0, 0);
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  // Auto-scroll to bottom of the MESSAGES CONTAINER only (not the page).
+  // Skip when there's just the welcome message so the page isn't yanked
+  // down to the input area on first load.
+  useEffect(() => {
+    if (messages.length <= 1) return;
     const container = messagesContainerRef.current;
     if (container) {
       container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
@@ -246,9 +307,6 @@ export default function AiAssistant() {
 
   // Fetch status on mount + get user location
   useEffect(() => {
-    // Scroll page to top on mount so the chat is visible from the start
-    window.scrollTo(0, 0);
-
     ragApi.getStatus()
       .then(setStatus)
       .catch(() => setStatus(null));
@@ -321,7 +379,7 @@ export default function AiAssistant() {
       setMessages(prev => [...prev, errorMsg]);
     } finally {
       setLoading(false);
-      inputRef.current?.focus();
+      inputRef.current?.focus({ preventScroll: true });
     }
   }, [input, loading, sessionId, userLocation]);
 
@@ -332,6 +390,21 @@ export default function AiAssistant() {
     setTimeout(() => sendMessage(question), 50);
   }, [sendMessage]);
 
+  // ── Feedback handler (agentic learning) ─────────────────────────
+  const handleFeedback = useCallback(async (msg, feedback) => {
+    const interactionId = msg.data?.interaction_id;
+    if (!interactionId) return;
+    try {
+      await ragApi.submitFeedback(interactionId, feedback);
+      // Mark this message as having feedback so the UI updates
+      setMessages(prev => prev.map(m =>
+        m === msg ? { ...m, feedback } : m
+      ));
+    } catch (err) {
+      console.error('Feedback error:', err);
+    }
+  }, []);
+
   // ── Reset chat ──────────────────────────────────────────────────
   const handleReset = async () => {
     if (sessionId) {
@@ -340,6 +413,7 @@ export default function AiAssistant() {
     setMessages([{ ...WELCOME, time: timeNow() }]);
     setSessionId(null);
     setInput('');
+    sessionStorage.removeItem(STORAGE_KEY);
   };
 
   // ── Keyboard handler ───────────────────────────────────────────
@@ -381,7 +455,7 @@ export default function AiAssistant() {
           {/* ── Messages ────────────────────────────────────────── */}
           <div className="rag-messages" ref={messagesContainerRef}>
             {messages.map((msg, i) => (
-              <MessageBubble key={i} msg={msg} onFollowUp={handleFollowUp} />
+              <MessageBubble key={i} msg={msg} onFollowUp={handleFollowUp} onFeedback={handleFeedback} />
             ))}
             {loading && <TypingIndicator />}
           </div>
@@ -414,7 +488,6 @@ export default function AiAssistant() {
           </div>
         </div>
       </div>
-      <Footer />
     </>
   );
 }

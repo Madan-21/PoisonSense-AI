@@ -258,15 +258,15 @@ export default function Home() {
           <div className="about-left">
             <img
               src="/images/home_about.jpg"
-              alt="About PoisonGuard AI"
+              alt="About PoisonSense AI"
               className="about-image"
             />
           </div>
 
           <div className="about-right">
-            <h2>About PoisonGuard AI</h2>
+            <h2>About PoisonSense AI</h2>
             <p>
-              PoisonGuard AI is an advanced emergency decision support system
+              PoisonSense AI is an advanced emergency decision support system
               designed to provide immediate, life-saving guidance during
               poisoning emergencies. Our NLP-based artificial intelligence
               analyzes your situation in real-time and delivers personalized

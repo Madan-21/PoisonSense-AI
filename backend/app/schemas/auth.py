@@ -197,3 +197,34 @@ class VerificationResponse(BaseModel):
     access_token: Optional[str] = None
     token_type: str = "bearer"
     user: Optional[UserResponse] = None
+
+# Password Reset Schemas
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v):
+        return validate_email_domain(v)
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(..., min_length=6, max_length=6)
+    new_password: str = Field(..., min_length=8)
+
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v):
+        return validate_email_domain(v)
+
+    @field_validator('otp')
+    @classmethod
+    def validate_otp(cls, v):
+        if not v.isdigit():
+            raise ValueError('OTP must contain only digits')
+        return v
+
+    @field_validator('new_password')
+    @classmethod
+    def validate_password(cls, v):
+        return validate_password_strength(v)

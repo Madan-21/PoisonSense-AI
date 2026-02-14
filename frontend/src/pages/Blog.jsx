@@ -56,7 +56,7 @@ export default function Blog() {
       {/* HERO */}
       <section className="blog-hero">
         <div className="blog-hero-inner">
-          <h1>PoisonGuard Blog</h1>
+          <h1>PoisonSense Blog</h1>
           <p>
             Expert insights, safety tips, and the latest research in poison
             prevention and emergency care

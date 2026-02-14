@@ -1,7 +1,7 @@
 /* Doctor Dashboard Styles */
 .doctor-dashboard {
   min-height: calc(100vh - 120px);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 100%);
   padding: 2rem;
 }
 
@@ -18,7 +18,7 @@
 
 .header-content h1 {
   margin: 0;
-  color: #667eea;
+  color: #0a1e3f;
   font-size: 2rem;
 }
 
@@ -53,7 +53,7 @@
 
 .info-card h3 {
   margin: 0 0 1.5rem 0;
-  color: #667eea;
+  color: #0a1e3f;
   font-size: 1.3rem;
 }
 
@@ -135,7 +135,7 @@
 }
 
 .blog-stats .stat-icon {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 100%);
 }
 
 .pending-stats .stat-icon {
@@ -172,7 +172,7 @@
 
 .quick-actions h2 {
   margin: 0 0 1.5rem 0;
-  color: #667eea;
+  color: #0a1e3f;
 }
 
 .action-grid {
@@ -196,19 +196,19 @@
 }
 
 .action-btn.primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 100%);
   color: white;
 }
 
 .action-btn.secondary {
   background: #f8f9fa;
-  color: #667eea;
-  border: 2px solid #667eea;
+  color: #0a1e3f;
+  border: 2px solid #0a1e3f;
 }
 
 .action-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(10, 30, 63, 0.4);
 }
 
 .btn-icon {
@@ -225,7 +225,7 @@
 
 .recent-section h2 {
   margin: 0 0 1.5rem 0;
-  color: #667eea;
+  color: #0a1e3f;
 }
 
 .cases-list {
@@ -242,7 +242,7 @@
 }
 
 .case-card:hover {
-  border-color: #667eea;
+  border-color: #0a1e3f;
 }
 
 .case-header {
@@ -254,7 +254,7 @@
 
 .case-id {
   font-weight: 600;
-  color: #667eea;
+  color: #0a1e3f;
 }
 
 .severity-badge {
@@ -290,7 +290,7 @@
 }
 
 .benefits-banner {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a1e3f 0%, #1a3a52 100%);
   color: white;
   border-radius: 15px;
   padding: 2rem;

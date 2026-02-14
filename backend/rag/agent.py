@@ -37,6 +37,7 @@ from rag.inference_optimization import (
     get_cache, compress_context, parallel_query_collections,
     adaptive_top_k, timed, build_compact_prompt,
 )
+from rag.learning import log_interaction
 
 
 # ── Session Memory ─────────────────────────────────────────────────────
@@ -69,6 +70,9 @@ def _route_collections(query: str, classification: Dict) -> List[str]:
     """Decide which collections to query based on intent."""
     q_lower = query.lower()
     targets = [DEFAULT_COLLECTION]  # always include general
+
+    # Always include learned interactions (agentic memory)
+    targets.append("learned_interactions")
 
     if classification.get("is_emergency") or any(
         kw in q_lower for kw in ["first aid", "emergency", "help", "swallow", "inhale"]
@@ -605,7 +609,10 @@ def ask(
         session_id=session_id,
         follow_up_questions=grounded.get("follow_up_questions", []),
     )
-    _record(session, query, grounded.get("answer", ""))
+    _conf_score = response.get("confidence", {}).get("score", 0.0)
+    _record(session, query, grounded.get("answer", ""),
+            session_id=session_id, confidence=_conf_score,
+            risk_level=classification.get("risk_level", "low"))
     
     # Cache the result for future identical queries
     cache.put(query, response)
@@ -787,11 +794,23 @@ def _calculate_confidence(sources: List[Dict], classification: Dict, is_refusal:
     }
 
 
-def _record(session: Dict, user_msg: str, assistant_msg: str):
-    """Record messages in session history."""
+def _record(session: Dict, user_msg: str, assistant_msg: str, session_id: str = "", confidence: float = 0.0, risk_level: str = "low"):
+    """Record messages in session history and log to learning DB."""
     session["history"].append({"role": "user", "content": user_msg})
     session["history"].append({"role": "assistant", "content": assistant_msg[:500]})
     _trim_history(session)
+    
+    # Log to learning DB for agentic feedback loop
+    try:
+        log_interaction(
+            question=user_msg,
+            answer=assistant_msg[:2000],
+            session_id=session_id or session.get("id", ""),
+            confidence=confidence,
+            risk_level=risk_level,
+        )
+    except Exception:
+        pass  # Never let logging break the main flow
 
 
 def reset_session(session_id: str) -> bool:

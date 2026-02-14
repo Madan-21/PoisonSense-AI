@@ -1,8 +1,10 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import ScrollToTop from "./components/ScrollToTop";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
 import AiAssistant from "./pages/AiAssistant";
 import FindHelp from "./pages/FindHelp";
 
@@ -35,11 +37,13 @@ export default function AppRoutes() {
 
   return (
     <>
+      <ScrollToTop />
       <Routes>
         {/* ── Public routes ── */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/register" element={<Signup />} />
         <Route path="/find-help" element={<FindHelp />} />
         <Route path="/poison-centers" element={<PoisonCenters />} />
