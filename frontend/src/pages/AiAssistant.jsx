@@ -242,11 +242,17 @@ const WELCOME = {
    Main Component
    ═══════════════════════════════════════════════════════════════════════ */
 
-const STORAGE_KEY = 'poisonsense_chat';
+const STORAGE_KEY_PREFIX = 'poisonsense_chat_';
 
-function loadSavedChat() {
+function getStorageKey(user) {
+  // Scope chat history to each user; guests get their own key
+  const userId = user?.id || user?.email || 'guest';
+  return `${STORAGE_KEY_PREFIX}${userId}`;
+}
+
+function loadSavedChat(user) {
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
+    const raw = sessionStorage.getItem(getStorageKey(user));
     if (!raw) return null;
     const saved = JSON.parse(raw);
     if (saved && Array.isArray(saved.messages) && saved.messages.length > 1) {
@@ -256,11 +262,11 @@ function loadSavedChat() {
   return null;
 }
 
-function saveChat(messages, sessionId) {
+function saveChat(messages, sessionId, user) {
   try {
     // Only persist if there's more than the welcome message
     if (messages.length > 1) {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ messages, sessionId }));
+      sessionStorage.setItem(getStorageKey(user), JSON.stringify({ messages, sessionId }));
     }
   } catch {}
 }
@@ -268,8 +274,8 @@ function saveChat(messages, sessionId) {
 export default function AiAssistant() {
   const { user } = useAuth();
 
-  // Restore chat from sessionStorage on mount
-  const saved = loadSavedChat();
+  // Restore chat from sessionStorage on mount (scoped to this user)
+  const saved = loadSavedChat(user);
   const [messages, setMessages] = useState(saved ? saved.messages : [WELCOME]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -282,8 +288,8 @@ export default function AiAssistant() {
 
   // Persist chat to sessionStorage whenever messages or sessionId change
   useEffect(() => {
-    saveChat(messages, sessionId);
-  }, [messages, sessionId]);
+    saveChat(messages, sessionId, user);
+  }, [messages, sessionId, user]);
 
   // Lock body scroll while the chatbot page is mounted so the browser
   // can never scroll the outer page (e.g. to bring the textarea into view).
@@ -413,7 +419,7 @@ export default function AiAssistant() {
     setMessages([{ ...WELCOME, time: timeNow() }]);
     setSessionId(null);
     setInput('');
-    sessionStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(getStorageKey(user));
   };
 
   // ── Keyboard handler ───────────────────────────────────────────
