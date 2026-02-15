@@ -65,6 +65,7 @@ npm-debug.log
 .env.local
 .env.production
 vercel.env
+ingest_local.py
 # Dependencies
 node_modules/
 __pycache__/

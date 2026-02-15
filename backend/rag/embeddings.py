@@ -1,13 +1,17 @@
 """
-Embedding layer — Hugging Face Inference API (free, no local models, Vercel-safe).
-Uses the public sentence-transformers/all-MiniLM-L6-v2 model (384 dimensions).
+Embedding layer — Hugging Face Inference API (free with HF token, Vercel-safe).
+Uses the sentence-transformers/all-MiniLM-L6-v2 model (384 dimensions).
+
+NOTE: As of 2025, HF migrated from api-inference.huggingface.co to
+router.huggingface.co. A free HF_API_TOKEN is now required.
 """
 
 from typing import List
 import requests
 from rag.config import HF_API_TOKEN, EMBEDDING_MODEL
 
-_HF_API_URL = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{EMBEDDING_MODEL}"
+# New HF Inference API endpoint (old api-inference.huggingface.co is 410 Gone)
+_HF_API_URL = f"https://router.huggingface.co/hf-inference/models/{EMBEDDING_MODEL}/pipeline/feature-extraction"
 
 
 def _headers() -> dict:
