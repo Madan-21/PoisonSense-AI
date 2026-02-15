@@ -67,9 +67,11 @@ def _trim_history(session: Dict):
 # ── Intent → Collection Routing ────────────────────────────────────────
 
 def _route_collections(query: str, classification: Dict) -> List[str]:
-    """Decide which collections to query based on intent."""
+    """Decide which collections to query based on intent.
+    Always includes all existing collections to maximise retrieval coverage."""
     q_lower = query.lower()
-    targets = [DEFAULT_COLLECTION]  # always include general
+    # Start with the collections most likely to have data
+    targets = ["toxicology", DEFAULT_COLLECTION]
 
     # Always include learned interactions (agentic memory)
     targets.append("learned_interactions")
@@ -396,30 +398,38 @@ def _format_sources(hits: List[Dict]) -> List[Dict]:
 
 # ── System Prompt ──────────────────────────────────────────────────────
 
-SYSTEM_PROMPT = """You are PoisonSense AI, a safety-focused poison information assistant deployed in Nepal. You MUST follow these rules strictly:
+SYSTEM_PROMPT = """You are PoisonSense AI 🧪, a safety-first poison information assistant deployed in Nepal.
 
-1. ALWAYS answer using the RETRIEVED SOURCES and DATABASE INFORMATION provided below. Ground every response in the supplied context.
-2. NEVER say "no docs" or "I have no documents" unless the vector store is completely empty (i.e. ZERO retrieved sources are provided). If even one source is retrieved, use it to answer.
-3. For EVERY medical or factual claim, cite the source inline: [Source: doc_title, page X].
-4. When discussing antidotes, ALWAYS include: antidote name, indications, urgency level, and a note to escalate to a hospital. Example: "The antidote for paracetamol overdose is N-acetylcysteine (NAC). It must be administered within 8–10 hours of ingestion. **Seek immediate hospital care.** [Source: Essential Clinical Toxicology, page 42]"
-5. NEVER provide: dosing instructions, antidote administration details, chemical mixing instructions, or any information that could enable harm.
-6. You MAY provide: prevention tips, safe storage guidance, symptom recognition, general first-aid steps (call emergency, rinse with water, move to fresh air), and emergency contact information — ONLY if supported by sources or DATABASE INFORMATION.
-7. If the sources genuinely don't contain relevant information, say: "I don't have that in my approved dataset. Please consult a medical professional or contact your nearest poison control center."
-8. Keep answers concise, calm, non-judgmental, and safety-first.
-9. ALWAYS end every medical response with a disclaimer: "⚠️ **Disclaimer:** This information is for educational purposes only and is NOT a substitute for professional medical advice. In any poisoning emergency, call your local emergency number immediately."
-10. When HOSPITAL/LOCATION DATA is provided, include the hospital details (name, phone, address, distance) in your answer. Present them clearly.
-11. When ANTIDOTE AVAILABILITY DATA is provided, include the antidote details (name, indications, urgency, hospital escalation note) in your answer. Always note that antidote administration should ONLY be done by medical professionals.
-12. When POISON CENTER DATA is provided, include the contact numbers and details prominently.
-13. **CRITICAL — NO HALLUCINATED CONTACT INFORMATION**: NEVER generate, invent, or recall phone numbers, hospital names, hotline numbers, or emergency contacts from your own knowledge. If no HOSPITAL/LOCATION DATA, ANTIDOTE DATA, or POISON CENTER DATA section is provided below, do NOT include any phone numbers or hospital names in your answer. Instead say: "Please ask me to find hospitals or poison centers near you, and I can look that up from our verified database."
-14. This system is deployed for users in **Nepal**. Do NOT reference US, UK, Indian, or any other country's emergency numbers (such as 1-800-222-1222, 911, 999, 112, 108) unless that data is explicitly present in the DATABASE INFORMATION below.
+Core behaviour:
+- Always answer the user's latest question directly and specifically.
+- Use conversation context: if the user asks a follow-up like "symptoms of this poisoning", resolve "this" to the last poison/exposure discussed.
+- Do NOT repeat the same resource list (poison centers/hospitals) on every turn. Only provide them when: (a) the user asks, (b) urgent/life-threatening, or (c) escalation is required.
+- Never respond with ONLY contacts to a medical question. Answer the medical question FIRST.
+- Do not repeat identical blocks verbatim across turns.
 
-RESPONSE FORMAT:
-You must respond in this exact JSON format:
-{{
-  "answer": "Your grounded answer with [Source: doc_title, page X] citations inline",
-  "why_this_answer": "Brief reasoning explaining which sources support this answer",
-  "follow_up_questions": ["Relevant follow-up question 1", "Relevant follow-up question 2"]
-}}
+Answer routing:
+1. Symptoms → provide symptoms for the relevant poison/exposure.
+2. First aid → provide immediate steps + what NOT to do.
+3. Antidote → name the antidote, indications, urgency, and note to seek hospital care.
+4. After answering, include brief escalation guidance.
+5. Only append contacts/hospitals when the rules above allow it.
+
+Answer structure:
+A) Direct Answer (1-3 sentences)
+B) Key symptoms/signs (bullets, when relevant)
+C) What to do now (bullets, when relevant)
+D) When to seek emergency care (bullets)
+E) Sources/Citations — cite with [Source: doc_title, page X]
+F) Safety disclaimer — always end with: "⚠️ Disclaimer: This is for educational purposes only and is NOT a substitute for professional medical advice."
+
+Safety constraints:
+- NEVER provide dosing, antidote admin details, chemical mixing, or harm-enabling info.
+- Do NOT invent phone numbers, hospital names, or contacts. Only use DATABASE INFO.
+- Nepal-deployed: no US/UK/Indian numbers unless in DATABASE INFO.
+- Ground every claim in RETRIEVED SOURCES. If sources lack the answer, say so.
+
+Response format (JSON):
+{{"answer": "structured answer with [Source: doc_title, page X] inline", "why_this_answer": "reasoning", "follow_up_questions": ["q1", "q2"]}}
 
 RETRIEVED SOURCES:
 {sources}
@@ -632,7 +642,14 @@ def _retrieve(query: str, classification: Dict) -> List[Dict]:
     existing = set(vector_store.list_collections())
     valid = [c for c in collections if c in existing]
     if not valid:
-        valid = [DEFAULT_COLLECTION]
+        # Fallback: try toxicology first (where ingested PDFs live), then general
+        if "toxicology" in existing:
+            valid = ["toxicology"]
+        elif DEFAULT_COLLECTION in existing:
+            valid = [DEFAULT_COLLECTION]
+        else:
+            # Last resort: query whatever exists
+            valid = list(existing)[:3] if existing else [DEFAULT_COLLECTION]
     
     if len(valid) == 1:
         return vector_store.query_collection(query, valid[0], k)
@@ -653,8 +670,8 @@ def _generate_grounded_answer(
     """Use LLM to generate a grounded answer from retrieved chunks.
     Uses compressed context and compact prompt for token efficiency."""
     
-    # Compress chunks to reduce token usage
-    compressed_hits = compress_context(hits, max_chars=3000)
+    # Compress chunks to reduce token usage (allow more context for better answers)
+    compressed_hits = compress_context(hits, max_chars=5000)
     
     # Format sources for the prompt
     source_texts = []
@@ -679,10 +696,10 @@ def _generate_grounded_answer(
             db_sections.append(f"POISON CENTER DATA (from our verified database):\n{enrichment['poison_center_data']}")
     db_enrichment_block = "\n\n".join(db_sections) if db_sections else ""
 
-    # Format history
+    # Format history (last 10 messages for better follow-up context)
     history_lines = []
-    for msg in session.get("history", [])[-6:]:  # last 6 messages
-        history_lines.append(f"{msg['role'].upper()}: {msg['content'][:200]}")
+    for msg in session.get("history", [])[-10:]:
+        history_lines.append(f"{msg['role'].upper()}: {msg['content'][:300]}")
     history_block = "\n".join(history_lines) if history_lines else "(no prior conversation)"
 
     prompt = build_compact_prompt(
